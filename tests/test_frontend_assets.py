@@ -74,7 +74,7 @@ class TestFrontendAssets(unittest.TestCase):
         self.assertIn("/api/categories", js)
         self.assertIn("/api/products", js)
         self.assertIn("/api/track", js)
-        self.assertIn("generateKeepaSparkline", js, "Manca funzione generatore sparkline Keepa")
+        self.assertTrue("generateRadarSparkline" in js or "generateKeepaSparkline" in js, "Manca funzione generatore sparkline radar")
 
 if __name__ == "__main__":
     unittest.main()

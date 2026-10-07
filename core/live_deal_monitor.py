@@ -62,6 +62,35 @@ class LiveDealMonitor:
             print(f"❌ Eccezione nell'invio a {chat_id}: {e}")
             return False
 
+    def send_telegram_photo(self, chat_id: str, photo_url: str, caption: str, keyboard: Optional[Dict] = None) -> bool:
+        """Invia notifica con foto del prodotto o ripiega su messaggio testuale."""
+        if not self.bot_token or not photo_url:
+            return self.send_telegram_alert(chat_id, caption, keyboard)
+
+        url = f"{self.telegram_api}/sendPhoto"
+        truncated_caption = caption[:1020] + "..." if len(caption) > 1024 else caption
+        payload = {
+            "chat_id": chat_id,
+            "photo": photo_url,
+            "caption": truncated_caption,
+            "parse_mode": "HTML"
+        }
+        if keyboard:
+            payload["reply_markup"] = keyboard
+
+        try:
+            res = requests.post(url, json=payload, timeout=12)
+            data = res.json()
+            if data.get("ok"):
+                print(f"✅ Notifica con foto inviata con successo a {chat_id}!")
+                return True
+            else:
+                print(f"⚠️ Invio foto fallito verso {chat_id} ({data.get('description')}). Fallback su messaggio testuale.")
+                return self.send_telegram_alert(chat_id, caption, keyboard)
+        except Exception as e:
+            print(f"⚠️ Eccezione invio foto a {chat_id} ({e}). Fallback su messaggio testuale.")
+            return self.send_telegram_alert(chat_id, caption, keyboard)
+
     def check_user_alerts(self) -> int:
         """
         Controlla tutti gli alert attivi in 'user_alerts'.
@@ -71,8 +100,13 @@ class LiveDealMonitor:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
+        # Rileva colonne disponibili per compatibilità con database legacy di test
+        cur.execute("PRAGMA table_info(products_catalog)")
+        cols = [col[1] for col in cur.fetchall()]
+        img_col = "p.image_url," if "image_url" in cols else "'' as image_url,"
+
         # Seleziona alert dove il prezzo attuale è sceso sotto il target dell'utente
-        cur.execute("""
+        cur.execute(f"""
             SELECT 
                 a.id as alert_id,
                 a.user_id,
@@ -86,7 +120,9 @@ class LiveDealMonitor:
                 p.all_time_low,
                 p.avg_price_30d,
                 p.affiliate_url,
-                p.brand
+                p.brand,
+                {img_col}
+                p.sku_id
             FROM user_alerts a
             JOIN products_catalog p ON a.product_id = p.sku_id
             WHERE a.active = 1 
@@ -130,7 +166,11 @@ class LiveDealMonitor:
             }
 
             if alert["channel"] == "telegram":
-                success = self.send_telegram_alert(user_id, message, keyboard)
+                img_url = alert.get("image_url")
+                if img_url:
+                    success = self.send_telegram_photo(user_id, img_url, message, keyboard)
+                else:
+                    success = self.send_telegram_alert(user_id, message, keyboard)
                 if success:
                     cur.execute("""
                         UPDATE user_alerts 

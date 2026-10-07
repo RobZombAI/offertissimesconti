@@ -1,7 +1,7 @@
 """
 Telegram Deal Bot per Catalogo 3.000+ Prodotti Amazon
 Supporta comandi interattivi per tutte le 15 categorie, filtri ciclici/virali,
-ricerca istantanea su oltre 3.000 ASIN e alert di minimo storico in stile Keepa.
+ricerca istantanea su oltre 3.000 ASIN e alert di minimo storico in tempo reale.
 """
 
 import sqlite3
@@ -16,7 +16,7 @@ class TelegramMasterDealBot:
         self.db_path = db_path
 
     def format_deal_post(self, prod: Dict) -> str:
-        """Formatta un'offerta per Telegram in stile Keepa con grafici testuali e badge."""
+        """Formatta un'offerta per Telegram con grafici testuali e badge."""
         cyclical_badge = "🔄 CICLICO (RIACQUISTO)" if prod["is_cyclical"] else "⚡ VIRALE / TREND"
         drop_pct = prod["keepa_drop_percent"]
         is_atl = prod["current_price"] <= prod["all_time_low"]
@@ -31,7 +31,7 @@ class TelegramMasterDealBot:
             f"❌ Prezzo di Listino: ~€{prod['list_price']:.2f}~\n"
             f"📉 Minimo Storico: €{prod['all_time_low']:.2f}\n"
             f"📊 Media 30 Giorni: €{prod['avg_price_30d']:.2f}\n\n"
-            f"📈 *Trend Prezzo Keepa*:\n"
+            f"📈 *Trend Prezzo Radar*:\n"
             f"`[Media: €{prod['avg_price_30d']:.2f} ===📉===> Oggi: €{prod['current_price']:.2f}]`\n"
             f"🔄 _Ciclo consigliato di riacquisto: ogni {prod['cycle_days']} giorni_\n\n"
             f"👉 [CLICCA QUI PER ACQUISTARE SU AMAZON]({prod['affiliate_url']})\n\n"

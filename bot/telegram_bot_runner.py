@@ -72,6 +72,36 @@ class OffertissimeScontiTelegramBot:
             print(f"❌ Errore invio messaggio a {chat_id}: {e}")
             return {"ok": False, "error": str(e)}
 
+    def send_photo(self, chat_id: int, photo_url: str, caption: Optional[str] = None, reply_markup: Optional[Dict] = None, parse_mode: str = "HTML") -> Dict:
+        """Invia una foto reale del prodotto con didascalia e pulsanti inline."""
+        if not photo_url:
+            return self.send_message(chat_id, caption or "", reply_markup=reply_markup, parse_mode=parse_mode)
+
+        url = f"{self.api_url}/sendPhoto"
+        # Limite caption Telegram è 1024 caratteri
+        truncated_caption = caption[:1020] + "..." if caption and len(caption) > 1024 else caption
+        payload = {
+            "chat_id": chat_id,
+            "photo": photo_url,
+            "parse_mode": parse_mode
+        }
+        if truncated_caption:
+            payload["caption"] = truncated_caption
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+
+        try:
+            res = requests.post(url, json=payload, timeout=12)
+            res_data = res.json()
+            if not res_data.get("ok"):
+                print(f"⚠️ Invio foto fallito verso chat {chat_id} ({res_data.get('description')}). Fallback su messaggio testuale.")
+                return self.send_message(chat_id, caption or "", reply_markup=reply_markup, parse_mode=parse_mode)
+            print(f"✅ Foto inviata con successo a chat {chat_id}")
+            return res_data
+        except Exception as e:
+            print(f"⚠️ Errore invio foto verso chat {chat_id} ({e}). Fallback su messaggio testuale.")
+            return self.send_message(chat_id, caption or "", reply_markup=reply_markup, parse_mode=parse_mode)
+
     def send_document(self, chat_id: int, file_path: str, caption: Optional[str] = None) -> Dict:
         url = f"{self.api_url}/sendDocument"
         if not os.path.exists(file_path):
@@ -246,7 +276,7 @@ class OffertissimeScontiTelegramBot:
             f"💰 Prezzo Attuale: <b>€{p['current_price']:.2f}</b>\n"
             f"❌ Prezzo di Listino: <s>€{p['list_price']:.2f}</s>\n"
             f"📉 Minimo Storico: <b>€{p['all_time_low']:.2f}</b>\n"
-            f"📊 Media 30 Giorni Keepa: €{p['avg_price_30d']:.2f}\n\n"
+            f"📊 Media 30 Giorni Radar: €{p['avg_price_30d']:.2f}\n\n"
             f"📈 <code>[Media: €{p['avg_price_30d']:.2f} ──📉── Oggi: €{p['current_price']:.2f}]</code>\n"
         )
         return html
@@ -262,6 +292,16 @@ class OffertissimeScontiTelegramBot:
                 ]
             ]
         }
+
+    def send_deal(self, chat_id: int, p: Dict):
+        """Invia un'offerta completa con foto reale, anteprima dettagliata e pulsanti inline."""
+        caption = self.format_deal_html(p)
+        kb = self.get_deal_keyboard(p)
+        photo_url = p.get("image_url")
+        if photo_url:
+            self.send_photo(chat_id, photo_url, caption=caption, reply_markup=kb)
+        else:
+            self.send_message(chat_id, caption, reply_markup=kb)
 
     def get_categories_keyboard(self) -> Dict:
         emojis = {
@@ -302,12 +342,12 @@ class OffertissimeScontiTelegramBot:
         cat_name = products[0]["macro_category_name"]
         header = (
             f"📂 <b>LISTA SMART: {cat_name.upper()}</b>\n"
-            f"📊 <i>Top sconti verificati con media storica Keepa a 90 giorni:</i>\n"
+            f"📊 <i>Top sconti verificati con media storica del Radar a 90 giorni:</i>\n"
         )
         self.send_message(chat_id, header)
 
         for p in products:
-            self.send_message(chat_id, self.format_deal_html(p), reply_markup=self.get_deal_keyboard(p))
+            self.send_deal(chat_id, p)
 
         more_kb = {
             "inline_keyboard": [
@@ -325,7 +365,7 @@ class OffertissimeScontiTelegramBot:
             "📥 <b>EXPORT COMPLETO LINK AFFILIAZIONE (PostTap & Creator)</b>\n\n"
             "Ecco il file CSV con tutti i <b>3.396 prodotti</b> dell'indagine:\n"
             "• Titoli, brand, categorie e ASIN\n"
-            "• Prezzi attuali, listino e minimi storici Keepa\n"
+            "• Prezzi attuali, listino e minimi storici verificati\n"
             "• Tutti i link diretti con tag: <code>offertissimes-21</code>\n\n"
             "Pronto per il caricamento su PostTap o fogli Excel/Sheets!\n"
             "🌐 Link web: https://robzombai.github.io/offertissimesconti/offertissimesconti_posttap_export.csv"
@@ -370,7 +410,7 @@ class OffertissimeScontiTelegramBot:
             welcome_text = (
                 f"👋 Ciao <b>{first_name}</b>, benvenuto su <b>OFFERTISSIMESCONTI</b>! ⚡\n\n"
                 f"Siamo il tuo radar intelligente per gli acquisti su Amazon. "
-                f"Monitoriamo oltre <b>3.380 prodotti</b> ed eliminiamo i finti sconti grazie ai dati storici stile Keepa.\n\n"
+                f"Monitoriamo oltre <b>3.380 prodotti reali</b> ed eliminiamo i finti sconti grazie al nostro algoritmo di tracciamento continuo dei minimi storici.\n\n"
                 f"💡 <b>Cosa puoi fare:</b>\n"
                 f"• Clicca i pulsanti in basso per esplorare le offerte del momento\n"
                 f"• Clicca su <b>📋 I Miei Prodotti Seguiti</b> per vedere i tuoi alert attivi\n"
@@ -409,7 +449,7 @@ class OffertissimeScontiTelegramBot:
             else:
                 self.send_message(chat_id, f"🔎 Ecco i risultati migliori per '<b>{query}</b>':")
                 for p in results:
-                    self.send_message(chat_id, self.format_deal_html(p), reply_markup=self.get_deal_keyboard(p))
+                    self.send_deal(chat_id, p)
 
         elif text.startswith("/track"):
             parts = text.split()
@@ -437,7 +477,7 @@ class OffertissimeScontiTelegramBot:
             if results:
                 self.send_message(chat_id, f"🔎 Ho cercato '<b>{text}</b>' per te nel catalogo:")
                 for p in results:
-                    self.send_message(chat_id, self.format_deal_html(p), reply_markup=self.get_deal_keyboard(p))
+                    self.send_deal(chat_id, p)
             else:
                 self.send_message(chat_id, f"Non ho trovato risultati per '<b>{text}</b>'. Prova con comandi come <code>/deals</code> o <code>/minimi</code>.", reply_markup=self.get_main_menu_keyboard())
 
@@ -473,7 +513,12 @@ class OffertissimeScontiTelegramBot:
             p_dict = dict(p)
             header = "⚡ <b>PRODOTTO MONITORATO RILEVATO!</b>\nEcco il link affiliato con <b>Deeplinking Amazon App attivo</b>:\n\n"
             card_html = header + self.format_deal_html(p_dict)
-            self.send_message(chat_id, card_html, reply_markup=self.get_deal_keyboard(p_dict))
+            photo_url = p_dict.get("image_url")
+            kb = self.get_deal_keyboard(p_dict)
+            if photo_url:
+                self.send_photo(chat_id, photo_url, caption=card_html, reply_markup=kb)
+            else:
+                self.send_message(chat_id, card_html, reply_markup=kb)
         else:
             text = (
                 f"🔗 <b>LINK AFFILIATO GENERATO CON SUCCESSO!</b>\n\n"
@@ -580,7 +625,7 @@ class OffertissimeScontiTelegramBot:
         }
         self.send_message(chat_id, title_map.get(filter_type, "Ecco le offerte:"))
         for d in deals:
-            self.send_message(chat_id, self.format_deal_html(d), reply_markup=self.get_deal_keyboard(d))
+            self.send_deal(chat_id, d)
 
     def run_polling(self):
         info = self.test_connection()

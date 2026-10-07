@@ -1,6 +1,6 @@
 /**
  * OFFERTISSIMESCONTI - Client-Side App
- * Gestione dinamica catalogo, filtri Keepa, grafici SVG sparkline e alert modal.
+ * Gestione dinamica catalogo, filtri Radar Prezzi, grafici SVG sparkline e alert modal.
  */
 
 const CLOUDFLARE_BACKEND = 'https://voices-limousines-showing-classes.trycloudflare.com';
@@ -273,10 +273,11 @@ function renderProducts(products, reset) {
           <table class="products-table">
             <thead>
               <tr>
+                <th>Foto</th>
                 <th>Prodotto & Brand</th>
                 <th>Dipartimento</th>
                 <th>Prezzo Odierno</th>
-                <th>Minimo Keepa</th>
+                <th>Minimo Storico</th>
                 <th>Sconto Reale</th>
                 <th>Riacquisto Ciclico</th>
                 <th>Azione Rapida</th>
@@ -297,7 +298,12 @@ function renderProducts(products, reset) {
         ? `<span class="badge-cyclical" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🔄 Ogni ${p.cycle_days}gg</span>` 
         : `<span style="color:#94a3b8; font-size:0.76rem;">Spot</span>`;
 
+      const imgUrl = p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';
+
       tr.innerHTML = `
+        <td class="table-img-cell">
+          <img src="${imgUrl}" alt="${p.title}" class="table-product-thumb" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';">
+        </td>
         <td class="table-product-cell">
           <div class="table-product-title">${p.title}</div>
           <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code></div>
@@ -350,8 +356,9 @@ function renderProducts(products, reset) {
     const atlBadge = isAtl ? `<span class="badge-atl">🏆 Minimo Storico</span>` : '';
     const cyclicalBadge = p.is_cyclical ? `<span class="badge-cyclical">🔄 Riacquisto ogni ${p.cycle_days}gg</span>` : '';
 
-    // Genera sparkline SVG Keepa-style
-    const sparklineSvg = generateKeepaSparkline(p.avg_price_90d, p.avg_price_30d, p.current_price, p.all_time_low);
+    // Genera sparkline SVG andamento prezzi
+    const sparklineSvg = generateRadarSparkline(p.avg_price_90d, p.avg_price_30d, p.current_price, p.all_time_low);
+    const imgUrl = p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';
 
     card.innerHTML = `
       <div class="card-top">
@@ -362,13 +369,18 @@ function renderProducts(products, reset) {
         </div>
       </div>
 
+      <!-- Real Product Image Preview -->
+      <div class="card-img-box">
+        <img src="${imgUrl}" alt="${p.title}" class="card-product-img" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';">
+      </div>
+
       <div class="card-category">${p.macro_category_name}</div>
       <h3 class="card-title">${p.title}</h3>
 
-      <!-- Keepa-Style Sparkline -->
-      <div class="keepa-chart-box">
+      <!-- Price Trend Sparkline -->
+      <div class="radar-chart-box">
         <div class="chart-header">
-          <span>Andamento Keepa (90gg)</span>
+          <span>Andamento Storico (90gg)</span>
           <span>Minimo: €${p.all_time_low.toFixed(2)}</span>
         </div>
         ${sparklineSvg}
@@ -401,10 +413,10 @@ function renderProducts(products, reset) {
 }
 
 /**
- * Genera un grafico vettoriale SVG sparkline stile Keepa che mostra visivamente
+ * Genera un grafico vettoriale SVG sparkline che mostra visivamente
  * il trend di prezzo e il ribasso attuale rispetto al minimo storico.
  */
-function generateKeepaSparkline(p90, p30, pCurrent, pAtl) {
+function generateRadarSparkline(p90, p30, pCurrent, pAtl) {
   const width = 240;
   const height = 36;
   const max = Math.max(p90, p30, pCurrent) * 1.05;
@@ -536,7 +548,7 @@ function openLegalModal(type) {
           <li><strong>Email Redazione & Supporto:</strong> <a href="mailto:info@offertissimesconti.it">info@offertissimesconti.it</a></li>
           <li><strong>Tempo medio di risposta:</strong> Entro 24 ore lavorative.</li>
         </ul>
-        <p>Siamo a tua disposizione per qualsiasi verifica sui dati storici e sui calcoli Keepa dei prodotti.</p>
+        <p>Siamo a tua disposizione per qualsiasi verifica sui dati storici e sull'andamento dei prezzi dei prodotti.</p>
       `
     }
   };
