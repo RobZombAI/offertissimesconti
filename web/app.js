@@ -98,6 +98,12 @@ function setupEventListeners() {
     }
   });
 
+  // PostTap Export Button (Dynamic backend on GitHub Pages)
+  const exportBtn = document.getElementById('btnExportPosttap');
+  if (exportBtn && window.location.origin.includes('github.io')) {
+    exportBtn.href = `${CLOUDFLARE_BACKEND}/api/export/posttap.csv`;
+  }
+
   // Search
   searchBtn.addEventListener('click', () => {
     searchQuery = searchInput.value.trim();
