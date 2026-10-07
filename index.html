@@ -127,13 +127,46 @@
             <option value="25">Sconto ≥ 25%</option>
             <option value="35">Sconto ≥ 35%</option>
           </select>
+
+          <select id="sortSelect" aria-label="Ordinamento">
+            <option value="drop">Ordina: Maggior Sconto %</option>
+            <option value="price_asc">Ordina: Prezzo Minore (€)</option>
+            <option value="price_desc">Ordina: Prezzo Maggiore (€)</option>
+            <option value="atl">Ordina: Minimo Storico</option>
+            <option value="cycle">Ordina: Frequenza Consumabile</option>
+          </select>
+
+          <!-- View Mode Toggle (Grid vs Smart List) -->
+          <div class="view-mode-toggle" role="group" aria-label="Modalità di visualizzazione">
+            <button id="viewGridBtn" class="view-btn active" title="Vista Griglia con Grafici Keepa" aria-label="Vista Griglia">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 4h7v7H4zm11 0h5v7h-5zM4 15h7v5H4zm11 0h5v5h-5z"/>
+              </svg>
+              <span>Griglia</span>
+            </button>
+            <button id="viewListBtn" class="view-btn" title="Vista Tabella / Lista Professionale" aria-label="Vista Lista">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/>
+              </svg>
+              <span>Lista Pro</span>
+            </button>
+          </div>
+
+          <!-- PostTap / Creator Bulk Export Button -->
+          <a href="offertissimesconti_posttap_export.csv" download="offertissimesconti_posttap_export.csv" id="btnExportPosttap" class="btn btn-export" title="Scarica tutti i link di affiliazione per PostTap">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+            <span>Scarica PostTap (CSV)</span>
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Active Filters Badge / Counter -->
-    <div class="results-info">
+    <!-- Active Filters Badge / Counter & Info Bar -->
+    <div class="results-info-bar">
       <span id="resultsCount">Caricamento prodotti in corso...</span>
+      <span class="export-hint">💡 3.396 link pronti con il tuo tag <code>offertissimes-21</code></span>
     </div>
 
     <!-- Products Grid -->
