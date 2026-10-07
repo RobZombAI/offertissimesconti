@@ -594,6 +594,49 @@ button, input, select {
   box-shadow: var(--shadow-md);
 }
 
+/* Product Image Box in Card */
+.card-img-box {
+  width: 100%;
+  height: 180px;
+  background: #ffffff;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 14px;
+  border: 1px solid #f1f5f9;
+  padding: 8px;
+}
+
+.card-product-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.25s ease;
+}
+
+.product-card:hover .card-product-img {
+  transform: scale(1.04);
+}
+
+/* Table Thumbnail */
+.table-img-cell {
+  width: 60px;
+  padding: 8px 12px !important;
+  vertical-align: middle;
+}
+
+.table-product-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  display: block;
+}
+
 .card-top {
   display: flex;
   justify-content: space-between;
@@ -652,8 +695,8 @@ button, input, select {
   color: var(--primary);
 }
 
-/* Keepa Sparkline Box */
-.keepa-chart-box {
+/* Radar Sparkline Box */
+.radar-chart-box {
   background: var(--bg-alt);
   border-radius: var(--radius-sm);
   padding: 10px;
