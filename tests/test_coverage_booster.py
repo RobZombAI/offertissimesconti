@@ -81,6 +81,23 @@ class TestCoverageBooster(unittest.TestCase):
             with patch("builtins.open", side_effect=IOError("Permission denied")):
                 handler._serve_static(dummy_file)
                 handler.send_error.assert_called_with(500, "Errore server: Permission denied")
+
+            # Test BrokenPipe in _serve_static and exception in send_error
+            handler.wfile.write.side_effect = BrokenPipeError("Pipe broken")
+            handler._serve_static(dummy_file)
+
+            handler.wfile.write.side_effect = Exception("Write error")
+            handler.send_error.side_effect = Exception("Cannot send error")
+            handler._serve_static(dummy_file)
+
+            # Test BrokenPipe in _send_json
+            handler.wfile.write.side_effect = BrokenPipeError("Broken pipe")
+            handler._send_json(200, {"ok": True})
+
+            # Test nonexistent static file
+            handler.send_error.side_effect = None
+            handler._serve_static("/nonexistent/file/path/test.html")
+            handler.send_error.assert_called_with(404, "File non trovato")
         finally:
             if os.path.exists(dummy_file):
                 os.remove(dummy_file)
@@ -182,6 +199,47 @@ class TestCoverageBooster(unittest.TestCase):
         }
         bot.handle_callback(cb)
         bot.answer_callback_query.assert_called_with("cb_unk")
+
+    def test_ldm_send_alert_branches(self):
+        # 1. No token
+        ldm_no_token = LiveDealMonitor(bot_token="")
+        self.assertFalse(ldm_no_token.send_telegram_alert("123", "Test"))
+
+        # 2. Success with token
+        ldm_with_token = LiveDealMonitor(bot_token="fake_tok")
+        with patch("requests.post") as mock_post:
+            mock_post.return_value.json.return_value = {"ok": True}
+            res = ldm_with_token.send_telegram_alert("123", "Test")
+            self.assertTrue(res)
+
+    def test_tbr_extra_branches(self):
+        bot = OffertissimeScontiTelegramBot("fake")
+
+        # send_document failure responses
+        with patch("builtins.open", mock_open(read_data=b"data")):
+            with patch("requests.post") as mock_post:
+                mock_post.return_value.json.return_value = {"ok": False, "description": "Too large"}
+                res = bot.send_document(123, "file.csv")
+                self.assertFalse(res.get("ok"))
+
+                mock_post.side_effect = Exception("Network error")
+                res = bot.send_document(123, "file.csv")
+                self.assertFalse(res.get("ok"))
+
+        # extract_asin amzn.to exception
+        with patch("requests.get", side_effect=Exception("Timeout")):
+            asin = bot.extract_asin("Guarda qui https://amzn.to/abc12345")
+            self.assertIsNone(asin)
+
+        # callback track with invalid format
+        bot.answer_callback_query = MagicMock()
+        cb = {
+            "id": "cb_track_inv",
+            "data": "track_only_one_part",
+            "message": {"chat": {"id": 1}}
+        }
+        bot.handle_callback(cb)
+        bot.answer_callback_query.assert_called_with("cb_track_inv")
 
 if __name__ == "__main__":
     unittest.main()

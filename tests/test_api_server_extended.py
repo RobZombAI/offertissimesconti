@@ -98,6 +98,8 @@ class TestApiServerExtended(unittest.TestCase):
             url = f"{self.base_url}{f_name}"
             with urllib.request.urlopen(url) as res:
                 self.assertEqual(res.status, 200)
+                data = res.read()
+                self.assertGreater(len(data), 0)
 
     def test_run_server_mock(self):
         with patch("api.server.HTTPServer") as mock_http:

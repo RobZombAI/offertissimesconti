@@ -17,13 +17,18 @@ WEB_DIR = os.path.join(BASE_DIR, "web")
 
 class OffertissimeScontiServer(BaseHTTPRequestHandler):
     def _send_json(self, status: int, data: dict):
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        self.end_headers()
-        self.wfile.write(json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8"))
+        try:
+            body = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
 
     def _serve_static(self, filepath: str):
         if not os.path.exists(filepath):
@@ -42,8 +47,13 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
         except Exception as e:
-            self.send_error(500, f"Errore server: {str(e)}")
+            try:
+                self.send_error(500, f"Errore server: {str(e)}")
+            except Exception:
+                pass
 
     def do_OPTIONS(self):
         self.send_response(200)
