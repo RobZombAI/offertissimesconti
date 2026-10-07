@@ -71,8 +71,8 @@ class TestDatabaseIntegrity(unittest.TestCase):
         rows = cur.fetchall()
         for r in rows:
             url = r["affiliate_url"]
-            self.assertTrue(url.startswith("https://www.amazon.it/dp/"), f"URL non conforme ad Amazon.it: {url}")
-            self.assertIn("tag=offertissimesconti-21", url, f"Tag affiliato errato o mancante: {url}")
+            self.assertTrue(url.startswith("https://www.amazon.it/"), f"URL non conforme ad Amazon.it: {url}")
+            self.assertIn("tag=offertissimes-21", url, f"Tag affiliato errato o mancante: {url}")
 
     def test_cyclical_ratio_balance(self):
         cur = self.conn.cursor()

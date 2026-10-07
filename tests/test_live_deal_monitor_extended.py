@@ -72,7 +72,7 @@ class TestLiveDealMonitorExtended(unittest.TestCase):
             cur.execute("""
                 INSERT INTO products_catalog VALUES (
                     'SKU-TEST-SUCCESS', 'B00SUCCESS', 'Prodotto Successo', 'Brand', 'beauty_personal_care',
-                    10.0, 20.0, 10.0, 15.0, 'https://www.amazon.it/dp/B00SUCCESS?tag=offertissimesconti-21', 33.3
+                    10.0, 20.0, 10.0, 15.0, 'https://www.amazon.it/dp/B00SUCCESS?tag=offertissimes-21', 33.3
                 )
             """)
             conn.commit()

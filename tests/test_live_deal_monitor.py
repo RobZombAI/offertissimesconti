@@ -65,7 +65,7 @@ class TestLiveDealMonitor(unittest.TestCase):
             INSERT INTO products_catalog VALUES (
                 'SKU-TEST-A', 'B00TEST001', 'Prodotto Test Siero', 'BrandTest',
                 'beauty_personal_care', 15.00, 25.00, 14.00, 20.00,
-                'https://www.amazon.it/dp/B00TEST001?tag=offertissimesconti-21', 25.0
+                'https://www.amazon.it/dp/B00TEST001?tag=offertissimes-21', 25.0
             )
         """)
         # Alert: utente vuole comprare a <= 12.00 (ora a 15.00, quindi non deve scattare)

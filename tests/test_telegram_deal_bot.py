@@ -29,7 +29,7 @@ class TestTelegramDealBot(unittest.TestCase):
             "list_price": 24.00,
             "all_time_low": 17.50,
             "avg_price_30d": 22.00,
-            "affiliate_url": "https://www.amazon.it/dp/B073XVK2V1?tag=offertissimesconti-21",
+            "affiliate_url": "https://www.amazon.it/dp/B073XVK2V1?tag=offertissimes-21",
             "sku_id": "SKU-COFF-0001"
         }
         post = self.bot.format_deal_post(sample)
@@ -51,7 +51,7 @@ class TestTelegramDealBot(unittest.TestCase):
             "list_price": 25.00,
             "all_time_low": 15.00, # ATL raggiunto
             "avg_price_30d": 20.00,
-            "affiliate_url": "https://www.amazon.it/dp/B08N582H3N?tag=offertissimesconti-21",
+            "affiliate_url": "https://www.amazon.it/dp/B08N582H3N?tag=offertissimes-21",
             "sku_id": "SKU-CLEAN-0001"
         }
         post = self.bot.format_deal_post(sample_atl)

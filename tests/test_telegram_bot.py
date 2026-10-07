@@ -34,7 +34,7 @@ class TestTelegramBotRunner(unittest.TestCase):
         sample_prod = {
             "sku_id": "SKU-TEST-01",
             "current_price": 20.0,
-            "affiliate_url": "https://www.amazon.it/dp/B00TEST?tag=offertissimesconti-21"
+            "affiliate_url": "https://www.amazon.it/dp/B00TEST?tag=offertissimes-21"
         }
         kb = self.bot.get_deal_keyboard(sample_prod)
         self.assertIn("inline_keyboard", kb)

@@ -276,7 +276,7 @@ def inject():
 
     for idx, item in enumerate(REAL_BEST_SELLERS):
         sku_id = f"SKU-REAL-{idx+1:04d}"
-        affiliate_url = f"https://www.amazon.it/dp/{item['asin']}?tag=offertissimesconti-21"
+        affiliate_url = f"https://www.amazon.it/dp/{item['asin']}?tag=offertissimes-21"
         cat_name = cat_names.get(item["macro_category_id"], item["macro_category_id"])
 
         cur.execute("""

@@ -95,6 +95,22 @@ function setupEventListeners() {
     if (e.target === alertDialog) alertDialog.close();
   });
 
+  // Legal Modals (Privacy, Termini, Cookie, Contatti)
+  const legalDialog = document.getElementById('legalDialog');
+  const closeLegalModalBtn = document.getElementById('closeLegalModalBtn');
+  closeLegalModalBtn?.addEventListener('click', () => legalDialog?.close());
+  legalDialog?.addEventListener('click', (e) => {
+    if (e.target === legalDialog) legalDialog.close();
+  });
+
+  document.querySelectorAll('a[href^="#privacy"], a[href^="#termini"], a[href^="#cookie"], a[href^="#contatti"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const type = link.getAttribute('href').replace('#', '');
+      openLegalModal(type);
+    });
+  });
+
   alertForm.addEventListener('submit', handleAlertSubmit);
 }
 
@@ -353,3 +369,68 @@ async function handleAlertSubmit(e) {
     setTimeout(() => alertDialog.close(), 2500);
   }
 }
+
+function openLegalModal(type) {
+  const dialog = document.getElementById('legalDialog');
+  const title = document.getElementById('legalModalTitle');
+  const body = document.getElementById('legalModalBody');
+  if (!dialog || !title || !body) return;
+
+  const contentMap = {
+    privacy: {
+      title: "Informativa sulla Privacy (GDPR - Regolamento UE 2016/679)",
+      html: `
+        <p><strong>Titolare del Trattamento:</strong> OffertissimeSconti (info@offertissimesconti.it).</p>
+        <h4>1. Dati Raccolti e Finalità</h4>
+        <p>OffertissimeSconti raccoglie unicamente i dati forniti volontariamente dagli utenti (username Telegram o indirizzo email) per la sola ed esclusiva finalità di recapitare notifiche e allarmi sui ribassi di prezzo richiesti.</p>
+        <h4>2. Base Giuridica del Trattamento</h4>
+        <p>Il trattamento si basa sul consenso esplicito dell'interessato (Art. 6 par. 1 lett. a del GDPR), revocabile in qualunque momento.</p>
+        <h4>3. Nessuna Cessione a Terzi</h4>
+        <p>I tuoi dati di contatto non saranno mai ceduti, venduti o condivisi con inserzionisti o terze parti per scopi di marketing o profilazione.</p>
+        <h4>4. Diritti dell'Interessato</h4>
+        <p>Ai sensi degli artt. 15-22 del GDPR, puoi richiedere in qualunque momento la rettifica, la cancellazione immediata dei tuoi alert o la revoca del consenso inviando un'email a <a href="mailto:info@offertissimesconti.it">info@offertissimesconti.it</a> o digitando <code>/wishlist</code> nel nostro bot Telegram.</p>
+      `
+    },
+    termini: {
+      title: "Termini e Condizioni di Utilizzo",
+      html: `
+        <p>Benvenuto su <strong>OffertissimeSconti</strong>. L'accesso e l'uso del nostro portale e del bot Telegram sono soggetti alle seguenti condizioni:</p>
+        <h4>1. Natura del Servizio</h4>
+        <p>OffertissimeSconti è un portale editoriale e un motore di comparazione e tracciamento storico dei prezzi. OffertissimeSconti <strong>non vende direttamente alcun prodotto</strong> e non gestisce pagamenti, spedizioni o resi.</p>
+        <h4>2. Prezzi e Disponibilità</h4>
+        <p>I prezzi, gli sconti percentuali e le disponibilità dei prodotti indicati sono monitorati in tempo reale ma possono variare su Amazon.it in qualunque momento. Il prezzo effettivo è sempre quello visualizzato su Amazon al momento del checkout.</p>
+        <h4>3. Programma di Affiliazione Amazon</h4>
+        <p>In qualità di Affiliato Amazon, OffertissimeSconti percepisce una commissione per gli acquisti idonei effettuati tramite i link contrassegnati. Tale affiliazione non comporta alcun costo aggiuntivo per l'utente.</p>
+      `
+    },
+    cookie: {
+      title: "Informativa Cookie & Tecnologie Simili",
+      html: `
+        <h4>1. Cookie Tecnici</h4>
+        <p>Il nostro sito utilizza esclusivamente <strong>cookie tecnici essenziali</strong> e memoria locale del browser (LocalStorage) per memorizzare le preferenze di navigazione (es. filtri attivi, stato del carrello alert).</p>
+        <h4>2. Nessun Cookie di Profilazione Proprietario</h4>
+        <p>OffertissimeSconti non impiega cookie proprietari di profilazione comportamentale o pubblicitaria invasiva.</p>
+        <h4>3. Link di Terze Parti (Amazon.it)</h4>
+        <p>Cliccando sui link di acquisto verso Amazon.it, verrai reindirizzato sui server di Amazon Europe S.à r.l., dove verranno applicate le rispettive cookie policy conformi alla normativa europea vigente.</p>
+      `
+    },
+    contatti: {
+      title: "Contatti & Supporto Ufficiale",
+      html: `
+        <p>Hai domande, suggerimenti per nuovi prodotti da inserire nel radar o desideri supporto?</p>
+        <ul>
+          <li><strong>Bot Telegram Interattivo:</strong> <a href="https://t.me/offertissimesconti_radar_bot" target="_blank" rel="noopener">@offertissimesconti_radar_bot</a></li>
+          <li><strong>Email Redazione & Supporto:</strong> <a href="mailto:info@offertissimesconti.it">info@offertissimesconti.it</a></li>
+          <li><strong>Tempo medio di risposta:</strong> Entro 24 ore lavorative.</li>
+        </ul>
+        <p>Siamo a tua disposizione per qualsiasi verifica sui dati storici e sui calcoli Keepa dei prodotti.</p>
+      `
+    }
+  };
+
+  const selected = contentMap[type] || contentMap.privacy;
+  title.textContent = selected.title;
+  body.innerHTML = selected.html;
+  dialog.showModal();
+}
+
