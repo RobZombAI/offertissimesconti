@@ -3,7 +3,10 @@
  * Gestione dinamica catalogo, filtri Keepa, grafici SVG sparkline e alert modal.
  */
 
-const API_BASE = window.location.origin.includes('http') ? window.location.origin : 'http://localhost:8000';
+const CLOUDFLARE_BACKEND = 'https://voices-limousines-showing-classes.trycloudflare.com';
+const API_BASE = window.location.origin.includes('github.io') 
+  ? CLOUDFLARE_BACKEND 
+  : (window.location.origin.includes('http') ? window.location.origin : 'http://localhost:8000');
 let currentProducts = [];
 let allCategories = [];
 let activeFilter = 'all'; // 'all', 'atl', 'cyclical', 'viral'
