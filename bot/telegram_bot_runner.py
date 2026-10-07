@@ -11,6 +11,7 @@ import time
 import sqlite3
 import requests
 import json
+import re
 from typing import Dict, List, Optional
 
 # Assicura flush immediato dei log
@@ -423,6 +424,13 @@ class OffertissimeScontiTelegramBot:
             except ValueError:
                 self.send_message(chat_id, "⚠️ Prezzo non valido. Inserisci un numero valido (es. 19.90).")
 
+        elif "amazon.it" in text or "amzn.to" in text or re.match(r'^[A-Z0-9]{10}$', text.strip()):
+            asin = self.extract_asin(text)
+            if asin:
+                self.handle_asin_lookup(chat_id, asin)
+            else:
+                self.send_message(chat_id, "⚠️ Impossibile estrarre l'ASIN da questo link Amazon. Verifica l'URL.")
+
         else:
             # Ricerca generica di default
             results = self.search_products(text, limit=2)
@@ -432,6 +440,55 @@ class OffertissimeScontiTelegramBot:
                     self.send_message(chat_id, self.format_deal_html(p), reply_markup=self.get_deal_keyboard(p))
             else:
                 self.send_message(chat_id, f"Non ho trovato risultati per '<b>{text}</b>'. Prova con comandi come <code>/deals</code> o <code>/minimi</code>.", reply_markup=self.get_main_menu_keyboard())
+
+    def extract_asin(self, text: str) -> Optional[str]:
+        clean = text.strip()
+        if re.match(r'^[A-Z0-9]{10}$', clean):
+            return clean
+        m = re.search(r'/(?:dp|gp/product)/([A-Z0-9]{10})', text)
+        if m:
+            return m.group(1)
+        if "amzn.to/" in text:
+            short_url_match = re.search(r'https?://amzn\.to/[A-Za-z0-9]+', text)
+            if short_url_match:
+                try:
+                    r = requests.get(short_url_match.group(0), timeout=5, allow_redirects=True)
+                    m2 = re.search(r'/(?:dp|gp/product)/([A-Z0-9]{10})', r.url)
+                    if m2:
+                        return m2.group(1)
+                except Exception:
+                    pass
+        return None
+
+    def handle_asin_lookup(self, chat_id: int, asin: str):
+        affiliate_url = f"https://www.amazon.it/dp/{asin}?tag=offertissimes-21"
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM products_catalog WHERE asin = ?", (asin,))
+        p = cur.fetchone()
+        conn.close()
+
+        if p:
+            p_dict = dict(p)
+            header = "⚡ <b>PRODOTTO MONITORATO RILEVATO!</b>\nEcco il link affiliato con <b>Deeplinking Amazon App attivo</b>:\n\n"
+            card_html = header + self.format_deal_html(p_dict)
+            self.send_message(chat_id, card_html, reply_markup=self.get_deal_keyboard(p_dict))
+        else:
+            text = (
+                f"🔗 <b>LINK AFFILIATO GENERATO CON SUCCESSO!</b>\n\n"
+                f"📦 <b>ASIN Rilevato:</b> <code>{asin}</code>\n"
+                f"🏷 <b>Tracking ID:</b> <code>offertissimes-21</code>\n"
+                f"📲 <b>Deeplinking App:</b> ✅ ATTIVO (apre subito l'app Amazon)\n\n"
+                f"👉 <b>Tuo Link Diretto:</b>\n<code>{affiliate_url}</code>\n\n"
+                f"💡 <i>Puoi copiare questo link e condividerlo sui social, canali o PostTap per ricevere le commissioni su ogni acquisto idoneo.</i>"
+            )
+            kb = {
+                "inline_keyboard": [
+                    [{"text": "🛒 Apri su Amazon (App Deeplink)", "url": affiliate_url}]
+                ]
+            }
+            self.send_message(chat_id, text, reply_markup=kb)
 
     def handle_callback(self, cb: Dict):
         cb_id = cb.get("id")

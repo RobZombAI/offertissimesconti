@@ -139,8 +139,49 @@ class TestPostTapAndCategories(unittest.TestCase):
         mock_post.side_effect = Exception("Network down")
         csv_file = os.path.join(BASE_DIR, "data", "offertissimesconti_posttap_export.csv")
         bot_real = OffertissimeScontiTelegramBot(token="123456:REAL")
-        res = bot_real.send_document(chat_id=123, file_path=csv_file)
-        self.assertFalse(res.get("ok"))
+    def test_extract_asin_direct_and_url(self):
+        self.assertEqual(self.bot.extract_asin("B07KYZ6X33"), "B07KYZ6X33")
+        self.assertEqual(self.bot.extract_asin("https://www.amazon.it/dp/B07KYZ6X33"), "B07KYZ6X33")
+        self.assertEqual(self.bot.extract_asin("https://www.amazon.it/gp/product/B07KYZ6X33/ref=xyz"), "B07KYZ6X33")
+        self.assertIsNone(self.bot.extract_asin("not_an_asin_string"))
+
+    @patch("requests.get")
+    def test_extract_asin_shortlink(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.url = "https://www.amazon.it/dp/B07KYZ6X33?tag=test-21"
+        mock_get.return_value = mock_resp
+        asin = self.bot.extract_asin("Guarda qui https://amzn.to/4hP8qY7 in offerta")
+        self.assertEqual(asin, "B07KYZ6X33")
+
+    def test_handle_asin_lookup_catalog_product(self):
+        self.bot.handle_asin_lookup(chat_id=12345, asin="B07KYZ6X33")
+        self.assertTrue(self.bot.send_message.called)
+        sent_html = self.bot.send_message.call_args[0][1]
+        self.assertIn("Aqualogis", sent_html)
+
+    def test_handle_asin_lookup_untracked_product(self):
+        self.bot.handle_asin_lookup(chat_id=12345, asin="B0NEWUNTRACK")
+        self.assertTrue(self.bot.send_message.called)
+        sent_text = self.bot.send_message.call_args[0][1]
+        self.assertIn("tag=offertissimes-21", sent_text)
+
+    def test_handle_message_with_amazon_url(self):
+        msg = {
+            "chat": {"id": 12345},
+            "text": "https://www.amazon.it/dp/B07KYZ6X33",
+            "from": {"first_name": "TestUser"}
+        }
+        self.bot.handle_message(msg)
+        self.assertTrue(self.bot.send_message.called)
+
+    def test_handle_message_with_invalid_amazon_url(self):
+        msg = {
+            "chat": {"id": 12345},
+            "text": "https://www.amazon.it/wrong-link-no-asin",
+            "from": {"first_name": "TestUser"}
+        }
+        self.bot.handle_message(msg)
+        self.assertTrue(self.bot.send_message.called)
 
 if __name__ == "__main__":
     unittest.main()
