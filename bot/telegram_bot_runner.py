@@ -71,6 +71,28 @@ class OffertissimeScontiTelegramBot:
             print(f"❌ Errore invio messaggio a {chat_id}: {e}")
             return {"ok": False, "error": str(e)}
 
+    def send_document(self, chat_id: int, file_path: str, caption: Optional[str] = None) -> Dict:
+        url = f"{self.api_url}/sendDocument"
+        if not os.path.exists(file_path):
+            return {"ok": False, "error": f"File non trovato: {file_path}"}
+        try:
+            with open(file_path, "rb") as f:
+                files = {"document": f}
+                data = {"chat_id": chat_id}
+                if caption:
+                    data["caption"] = caption
+                    data["parse_mode"] = "HTML"
+                res = requests.post(url, data=data, files=files, timeout=30)
+                res_data = res.json()
+                if res_data.get("ok"):
+                    print(f"✅ Documento inviato con successo a {chat_id}")
+                else:
+                    print(f"❌ Errore invio documento a {chat_id}: {res_data.get('description')}")
+                return res_data
+        except Exception as e:
+            print(f"❌ Errore invio documento a {chat_id}: {e}")
+            return {"ok": False, "error": str(e)}
+
     def answer_callback_query(self, callback_query_id: str, text: Optional[str] = None):
         url = f"{self.api_url}/answerCallbackQuery"
         payload = {"callback_query_id": callback_query_id}
@@ -123,6 +145,38 @@ class OffertissimeScontiTelegramBot:
                 LIMIT ?
             """, (limit,))
 
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def get_categories_stats(self) -> List[Dict]:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                macro_category_id,
+                macro_category_name,
+                COUNT(*) as count,
+                ROUND(AVG(keepa_drop_percent), 1) as avg_drop
+            FROM products_catalog
+            GROUP BY macro_category_id, macro_category_name
+            ORDER BY count DESC
+        """)
+        rows = [dict(r) for r in cur.fetchall()]
+        conn.close()
+        return rows
+
+    def get_category_deals(self, category_id: str, limit: int = 5) -> List[Dict]:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT * FROM products_catalog
+            WHERE macro_category_id = ?
+            ORDER BY keepa_drop_percent DESC
+            LIMIT ?
+        """, (category_id, limit))
         rows = [dict(r) for r in cur.fetchall()]
         conn.close()
         return rows
@@ -208,6 +262,77 @@ class OffertissimeScontiTelegramBot:
             ]
         }
 
+    def get_categories_keyboard(self) -> Dict:
+        emojis = {
+            "beauty_personal_care": "🧴", "health_supplements": "💊",
+            "electronics_gadgets": "📱", "home_kitchen": "🏠",
+            "cleaning_household": "🧼", "pet_supplies": "🐾",
+            "grocery_coffee": "☕", "sports_fitness_gear": "🏋️",
+            "baby_care": "👶", "diy_tools_garden": "🛠️",
+            "office_stationery": "📎", "automotive": "🚗",
+            "apparel_basics": "👕", "toys_hobbies": "🎮",
+            "books_planners": "📚"
+        }
+        cats = self.get_categories_stats()
+        rows = []
+        curr_row = []
+        for c in cats:
+            cid = c["macro_category_id"]
+            ico = emojis.get(cid, "🏷")
+            short_name = c["macro_category_name"].split()[0]
+            if len(short_name) < 4:
+                short_name = c["macro_category_name"][:14]
+            label = f"{ico} {short_name} ({c['count']})"
+            curr_row.append({"text": label, "callback_data": f"cat_{cid}"})
+            if len(curr_row) == 2:
+                rows.append(curr_row)
+                curr_row = []
+        if curr_row:
+            rows.append(curr_row)
+        rows.append([{"text": "🔙 Torna al Menu Principale", "callback_data": "menu_main"}])
+        return {"inline_keyboard": rows}
+
+    def send_category_smart_list(self, chat_id: int, category_id: str):
+        products = self.get_category_deals(category_id, limit=3)
+        if not products:
+            self.send_message(chat_id, "Nessun prodotto trovato in questa categoria.", reply_markup=self.get_main_menu_keyboard())
+            return
+
+        cat_name = products[0]["macro_category_name"]
+        header = (
+            f"📂 <b>LISTA SMART: {cat_name.upper()}</b>\n"
+            f"📊 <i>Top sconti verificati con media storica Keepa a 90 giorni:</i>\n"
+        )
+        self.send_message(chat_id, header)
+
+        for p in products:
+            self.send_message(chat_id, self.format_deal_html(p), reply_markup=self.get_deal_keyboard(p))
+
+        more_kb = {
+            "inline_keyboard": [
+                [
+                    {"text": "📂 Altre Categorie", "callback_data": "menu_categories"},
+                    {"text": "🔙 Menu Principale", "callback_data": "menu_main"}
+                ]
+            ]
+        }
+        self.send_message(chat_id, "💡 <i>Vuoi esplorare altri dipartimenti o impostare allarmi?</i>", reply_markup=more_kb)
+
+    def send_export_document(self, chat_id: int):
+        csv_path = os.path.join(BASE_DIR, "data", "offertissimesconti_posttap_export.csv")
+        caption = (
+            "📥 <b>EXPORT COMPLETO LINK AFFILIAZIONE (PostTap & Creator)</b>\n\n"
+            "Ecco il file CSV con tutti i <b>3.396 prodotti</b> dell'indagine:\n"
+            "• Titoli, brand, categorie e ASIN\n"
+            "• Prezzi attuali, listino e minimi storici Keepa\n"
+            "• Tutti i link diretti con tag: <code>offertissimes-21</code>\n\n"
+            "Pronto per il caricamento su PostTap o fogli Excel/Sheets!\n"
+            "🌐 Link web: https://robzombai.github.io/offertissimesconti/offertissimesconti_posttap_export.csv"
+        )
+        res = self.send_document(chat_id, csv_path, caption=caption)
+        if not res.get("ok"):
+            self.send_message(chat_id, caption, reply_markup=self.get_main_menu_keyboard())
+
     def get_main_menu_keyboard(self) -> Dict:
         return {
             "inline_keyboard": [
@@ -216,8 +341,12 @@ class OffertissimeScontiTelegramBot:
                     {"text": "🏆 Minimi Storici", "callback_data": "menu_minimi"}
                 ],
                 [
-                    {"text": "🔄 Spesa Ciclica (Caffè/Casa)", "callback_data": "menu_ciclici"},
-                    {"text": "📋 I Miei Prodotti Seguiti", "callback_data": "menu_wishlist"}
+                    {"text": "📂 Esplora per Categoria", "callback_data": "menu_categories"},
+                    {"text": "🔄 Spesa Ciclica", "callback_data": "menu_ciclici"}
+                ],
+                [
+                    {"text": "📋 I Miei Prodotti Seguiti", "callback_data": "menu_wishlist"},
+                    {"text": "📥 Scarica Link PostTap", "callback_data": "menu_export"}
                 ],
                 [
                     {"text": "🔍 Come Cercare", "callback_data": "menu_search_help"}
@@ -251,6 +380,12 @@ class OffertissimeScontiTelegramBot:
 
         elif text.startswith("/wishlist") or text.startswith("/allarmi") or text.startswith("/miei"):
             self.send_wishlist_message(chat_id)
+
+        elif text.startswith("/categorie") or text.startswith("/reparti"):
+            self.send_message(chat_id, "📂 <b>SELEZIONA UNA CATEGORIA:</b>\nScegli un dipartimento per visualizzare la lista intelligente delle migliori offerte attive:", reply_markup=self.get_categories_keyboard())
+
+        elif text.startswith("/export") or text.startswith("/posttap") or text.startswith("/csv"):
+            self.send_export_document(chat_id)
 
         elif text.startswith("/deals") or text.startswith("/offerte"):
             self.send_deals_list(chat_id, "deals")
@@ -311,6 +446,19 @@ class OffertissimeScontiTelegramBot:
         elif data == "menu_minimi":
             self.answer_callback_query(cb_id, "Caricamento minimi storici...")
             self.send_deals_list(chat_id, "minimi")
+        elif data == "menu_categories":
+            self.answer_callback_query(cb_id, "Caricamento categorie...")
+            self.send_message(chat_id, "📂 <b>SELEZIONA UNA CATEGORIA:</b>\nScegli un dipartimento per visualizzare la lista intelligente delle migliori offerte attive:", reply_markup=self.get_categories_keyboard())
+        elif data == "menu_export":
+            self.answer_callback_query(cb_id, "Invio export PostTap...")
+            self.send_export_document(chat_id)
+        elif data == "menu_main":
+            self.answer_callback_query(cb_id)
+            self.send_message(chat_id, "⚡ <b>Menu Principale OFFERTISSIMESCONTI</b>", reply_markup=self.get_main_menu_keyboard())
+        elif data.startswith("cat_"):
+            cat_id = data.replace("cat_", "")
+            self.answer_callback_query(cb_id, "Caricamento offerte categoria...")
+            self.send_category_smart_list(chat_id, cat_id)
         elif data == "menu_ciclici":
             self.answer_callback_query(cb_id, "Caricamento spesa ciclica...")
             self.send_deals_list(chat_id, "ciclici")

@@ -15,12 +15,17 @@ let minDiscount = 0;
 let searchQuery = '';
 let currentLimit = 24;
 let currentOffset = 0;
+let currentView = 'grid'; // 'grid' | 'list'
+let activeSort = 'drop';
 
 // DOM Elements
 const productsGrid = document.getElementById('productsGrid');
 const resultsCount = document.getElementById('resultsCount');
 const categorySelect = document.getElementById('categorySelect');
 const discountSelect = document.getElementById('discountSelect');
+const sortSelect = document.getElementById('sortSelect');
+const viewGridBtn = document.getElementById('viewGridBtn');
+const viewListBtn = document.getElementById('viewListBtn');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const categoryChips = document.getElementById('categoryChips');
@@ -68,6 +73,29 @@ function setupEventListeners() {
   discountSelect.addEventListener('change', (e) => {
     minDiscount = parseFloat(e.target.value) || 0;
     loadProducts(true);
+  });
+
+  sortSelect?.addEventListener('change', (e) => {
+    activeSort = e.target.value;
+    loadProducts(true);
+  });
+
+  viewGridBtn?.addEventListener('click', () => {
+    if (currentView !== 'grid') {
+      currentView = 'grid';
+      viewGridBtn.classList.add('active');
+      viewListBtn.classList.remove('active');
+      renderProducts(currentProducts, true);
+    }
+  });
+
+  viewListBtn?.addEventListener('click', () => {
+    if (currentView !== 'list') {
+      currentView = 'list';
+      viewListBtn.classList.add('active');
+      viewGridBtn.classList.remove('active');
+      renderProducts(currentProducts, true);
+    }
   });
 
   // Search
@@ -188,6 +216,7 @@ async function loadProducts(reset = true) {
 
   if (activeFilter === 'cyclical') params.append('cyclical', '1');
   if (activeFilter === 'viral') params.append('min_virality', '90');
+  if (activeSort) params.append('sort', activeSort);
 
   try {
     const res = await fetch(`${API_BASE}/api/products?${params.toString()}`);
@@ -226,6 +255,84 @@ function renderProducts(products, reset) {
         <p style="color: var(--text-muted);">Prova ad allentare i filtri di ricerca o la percentuale di sconto.</p>
       </div>
     `;
+    return;
+  }
+
+  // --- Modalità Lista Compatta Professionale ---
+  if (currentView === 'list') {
+    let tbody = document.getElementById('productsTableBody');
+    if (reset || !tbody) {
+      productsGrid.innerHTML = `
+        <div class="products-table-wrapper">
+          <table class="products-table">
+            <thead>
+              <tr>
+                <th>Prodotto & Brand</th>
+                <th>Dipartimento</th>
+                <th>Prezzo Odierno</th>
+                <th>Minimo Keepa</th>
+                <th>Sconto Reale</th>
+                <th>Riacquisto Ciclico</th>
+                <th>Azione Rapida</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody"></tbody>
+          </table>
+        </div>
+      `;
+      tbody = document.getElementById('productsTableBody');
+    }
+
+    products.forEach(p => {
+      const tr = document.createElement('tr');
+      const isAtl = p.current_price <= p.all_time_low;
+      const atlBadge = isAtl ? `<span class="badge-atl" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🏆 Minimo Storico</span>` : '';
+      const cyclicalBadge = p.is_cyclical 
+        ? `<span class="badge-cyclical" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🔄 Ogni ${p.cycle_days}gg</span>` 
+        : `<span style="color:#94a3b8; font-size:0.76rem;">Spot</span>`;
+
+      tr.innerHTML = `
+        <td class="table-product-cell">
+          <div class="table-product-title">${p.title}</div>
+          <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code></div>
+          ${atlBadge}
+        </td>
+        <td>
+          <span style="font-size:0.8rem; font-weight:600; color:#475569;">${p.macro_category_name}</span>
+        </td>
+        <td>
+          <div class="table-price">€${p.current_price.toFixed(2)}</div>
+          <span class="table-old-price">€${p.list_price.toFixed(2)}</span>
+        </td>
+        <td>
+          <strong style="color:var(--success);">€${p.all_time_low.toFixed(2)}</strong>
+          <div style="font-size:0.74rem; color:#64748b;">Media 30gg: €${p.avg_price_30d.toFixed(2)}</div>
+        </td>
+        <td>
+          <span class="badge-discount">-${p.keepa_drop_percent}%</span>
+        </td>
+        <td>
+          ${cyclicalBadge}
+        </td>
+        <td>
+          <div class="table-actions">
+            <a href="${p.affiliate_url}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
+              Acquista ↗
+            </a>
+            <button class="btn btn-track" data-sku="${p.sku_id}" data-name="${p.title}" data-price="${p.current_price}" data-atl="${p.all_time_low}">
+              🔔 Allerta
+            </button>
+          </div>
+        </td>
+      `;
+
+      tr.querySelector('.btn-track').addEventListener('click', (e) => {
+        const btn = e.currentTarget;
+        openAlertModal(btn.dataset.sku, btn.dataset.name, btn.dataset.price, btn.dataset.atl);
+      });
+
+      tbody.appendChild(tr);
+    });
     return;
   }
 

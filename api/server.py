@@ -61,7 +61,7 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
         if path == "/" or path == "/index.html":
             self._serve_static(os.path.join(WEB_DIR, "index.html"))
             return
-        elif path in ("/style.css", "/app.js"):
+        elif path in ("/style.css", "/app.js", "/offertissimesconti_posttap_export.csv", "/offertissimesconti_links_only.txt"):
             self._serve_static(os.path.join(WEB_DIR, path.lstrip("/")))
             return
 
@@ -119,11 +119,22 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                 limit = int(query.get("limit", [24])[0])
                 offset = int(query.get("offset", [0])[0])
 
+                sort_order = "keepa_drop_percent DESC"
+                sort_param = query.get("sort", ["drop"])[0]
+                if sort_param == "price_asc":
+                    sort_order = "current_price ASC"
+                elif sort_param == "price_desc":
+                    sort_order = "current_price DESC"
+                elif sort_param == "atl":
+                    sort_order = "(current_price - all_time_low) ASC, keepa_drop_percent DESC"
+                elif sort_param == "cycle":
+                    sort_order = "is_cyclical DESC, cycle_days ASC"
+
                 where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
                 sql = f"""
                     SELECT * FROM products_catalog
                     {where_clause}
-                    ORDER BY keepa_drop_percent DESC
+                    ORDER BY {sort_order}
                     LIMIT ? OFFSET ?
                 """
                 params.extend([limit, offset])
@@ -169,6 +180,22 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                 """)
                 stats = dict(cur.fetchone())
                 self._send_json(200, {"success": True, "stats": stats})
+
+            elif path == "/api/export/posttap.csv":
+                csv_path = os.path.join(BASE_DIR, "data", "offertissimesconti_posttap_export.csv")
+                if os.path.exists(csv_path):
+                    with open(csv_path, "rb") as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/csv; charset=utf-8")
+                    self.send_header("Content-Disposition", 'attachment; filename="offertissimesconti_posttap_export.csv"')
+                    self.send_header("Content-Length", str(len(content)))
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.end_headers()
+                    self.wfile.write(content)
+                    return
+                else:
+                    self._send_json(404, {"error": "File di export non trovato"})
 
             elif path == "/api/health":
                 self._send_json(200, {"status": "healthy", "brand": "OFFERTISSIMESCONTI", "version": "2.0"})

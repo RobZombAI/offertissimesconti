@@ -77,6 +77,28 @@ class TestApiServerExtended(unittest.TestCase):
         except urllib.error.HTTPError as e:
             self.assertEqual(e.code, 404)
 
+    def test_products_sorting_options(self):
+        for s in ["price_asc", "price_desc", "atl", "cycle", "drop"]:
+            url = f"{self.base_url}/api/products?sort={s}&limit=3"
+            with urllib.request.urlopen(url) as res:
+                data = json.loads(res.read().decode("utf-8"))
+                self.assertTrue(data["success"])
+                self.assertEqual(len(data["products"]), 3)
+
+    def test_export_posttap_csv_endpoint(self):
+        url = f"{self.base_url}/api/export/posttap.csv"
+        with urllib.request.urlopen(url) as res:
+            self.assertEqual(res.status, 200)
+            self.assertIn("text/csv", res.headers.get("Content-Type", ""))
+            content = res.read().decode("utf-8")
+            self.assertTrue(content.startswith("Title,Affiliate_URL"))
+
+    def test_static_export_files(self):
+        for f_name in ["/offertissimesconti_posttap_export.csv", "/offertissimesconti_links_only.txt"]:
+            url = f"{self.base_url}{f_name}"
+            with urllib.request.urlopen(url) as res:
+                self.assertEqual(res.status, 200)
+
     def test_run_server_mock(self):
         with patch("api.server.HTTPServer") as mock_http:
             mock_instance = MagicMock()
