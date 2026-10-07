@@ -1,0 +1,181 @@
+{
+  "macro_categories": [
+    {
+      "id": "beauty_skincare",
+      "name": "Beauty, Skincare & Cura Personale",
+      "target_skus": 650,
+      "avg_cycle_days": 45,
+      "avg_affiliate_margin": 0.09,
+      "viral_drivers": ["BeautyTok", "Korean Skincare Routine", "Sieri Acido Ialuronico & Retinolo"]
+    },
+    {
+      "id": "fitness_nutrition",
+      "name": "Fitness, Integratori & Biohacking",
+      "target_skus": 500,
+      "avg_cycle_days": 30,
+      "avg_affiliate_margin": 0.10,
+      "viral_drivers": ["GymTok", "Creatina & Whey", "Shaker Magnetici Auto-mescolanti"]
+    },
+    {
+      "id": "home_cleantok",
+      "name": "Casa Intelligente, CleanTok & Manutenzione",
+      "target_skus": 550,
+      "avg_cycle_days": 60,
+      "avg_affiliate_margin": 0.08,
+      "viral_drivers": ["CleanTok", "The Pink Stuff", "Capsule Lavastoviglie Scorte", "Filtri Depuratori"]
+    },
+    {
+      "id": "pet_care",
+      "name": "Pet Care (Cani & Gatti)",
+      "target_skus": 450,
+      "avg_cycle_days": 25,
+      "avg_affiliate_margin": 0.08,
+      "viral_drivers": ["Spazzole Toglipelo Rullo", "Filtri Fontanelle Gatto", "Dentastix & Crocchette"]
+    },
+    {
+      "id": "smart_tech_gadgets",
+      "name": "Smart Tech, Gadget EDC & Setup/Gaming",
+      "target_skus": 450,
+      "avg_cycle_days": 120,
+      "avg_affiliate_margin": 0.05,
+      "viral_drivers": ["Amazon Must-Haves", "Pellicole Dima Auto-applicante", "Supporti MagSafe Auto"]
+    },
+    {
+      "id": "baby_care",
+      "name": "Baby Care & Maternità",
+      "target_skus": 250,
+      "avg_cycle_days": 20,
+      "avg_affiliate_margin": 0.07,
+      "viral_drivers": ["Box Scorta Pampers", "Ricariche Maialino Mangia-pannolini", "Salviette Acqua 99%"]
+    },
+    {
+      "id": "coffee_specialty_food",
+      "name": "Caffè, Tè & Dispensa Speciale",
+      "target_skus": 200,
+      "avg_cycle_days": 30,
+      "avg_affiliate_margin": 0.09,
+      "viral_drivers": ["Cialde Borbone Box 150", "Matcha Cerimoniale Bio", "Sciroppi Zero Calorie Barista"]
+    }
+  ],
+  "sample_products": [
+    {
+      "id": "SKU-BEAUTY-001",
+      "asin": "B07XYZ1001",
+      "name": "COSRX Bava di Lumaca 96% Mucin Power Essence (100ml)",
+      "category": "beauty_skincare",
+      "brand": "COSRX",
+      "cycle_days": 45,
+      "virality_score": 98,
+      "current_price": 14.50,
+      "list_price": 25.90,
+      "all_time_low": 13.90,
+      "avg_price_30d": 21.40,
+      "avg_price_90d": 23.00,
+      "affiliate_url": "https://www.amazon.it/dp/B07XYZ1001?tag=dealtracker-21",
+      "is_all_time_low": false,
+      "discount_vs_avg30": 32.2
+    },
+    {
+      "id": "SKU-FIT-001",
+      "asin": "B08ABC2002",
+      "name": "Creatina Monoidrato 100% Creapure Polvere Pura 500g",
+      "category": "fitness_nutrition",
+      "brand": "Optimum Nutrition",
+      "cycle_days": 30,
+      "virality_score": 92,
+      "current_price": 24.90,
+      "list_price": 36.90,
+      "all_time_low": 24.50,
+      "avg_price_30d": 33.50,
+      "avg_price_90d": 34.90,
+      "affiliate_url": "https://www.amazon.it/dp/B08ABC2002?tag=dealtracker-21",
+      "is_all_time_low": false,
+      "discount_vs_avg30": 25.6
+    },
+    {
+      "id": "SKU-CLEAN-001",
+      "asin": "B09DEF3003",
+      "name": "Finish Quantum Ultimate Pastiglie Lavastoviglie Limone (Confezione Scorta 160 Caps)",
+      "category": "home_cleantok",
+      "brand": "Finish",
+      "cycle_days": 60,
+      "virality_score": 85,
+      "current_price": 27.90,
+      "list_price": 44.90,
+      "all_time_low": 27.90,
+      "avg_price_30d": 38.00,
+      "avg_price_90d": 41.50,
+      "affiliate_url": "https://www.amazon.it/dp/B09DEF3003?tag=dealtracker-21",
+      "is_all_time_low": true,
+      "discount_vs_avg30": 26.5
+    },
+    {
+      "id": "SKU-PET-001",
+      "asin": "B07GHI4004",
+      "name": "Spazzola Toglipelo Rullo Elettrostatico Riutilizzabile per Divani e Vestiti",
+      "category": "pet_care",
+      "brand": "Ace2Ace",
+      "cycle_days": 180,
+      "virality_score": 96,
+      "current_price": 11.89,
+      "list_price": 19.99,
+      "all_time_low": 11.50,
+      "avg_price_30d": 16.90,
+      "avg_price_90d": 17.50,
+      "affiliate_url": "https://www.amazon.it/dp/B07GHI4004?tag=dealtracker-21",
+      "is_all_time_low": false,
+      "discount_vs_avg30": 29.6
+    },
+    {
+      "id": "SKU-TECH-001",
+      "asin": "B08JKL5005",
+      "name": "Anker Cavo USB-C a USB-C PowerLine III Flow 100W Morbido al Tatto (1.8m)",
+      "category": "smart_tech_gadgets",
+      "brand": "Anker",
+      "cycle_days": 120,
+      "virality_score": 89,
+      "current_price": 12.99,
+      "list_price": 18.99,
+      "all_time_low": 12.99,
+      "avg_price_30d": 17.50,
+      "avg_price_90d": 18.20,
+      "affiliate_url": "https://www.amazon.it/dp/B08JKL5005?tag=dealtracker-21",
+      "is_all_time_low": true,
+      "discount_vs_avg30": 25.7
+    },
+    {
+      "id": "SKU-BABY-001",
+      "asin": "B09MNO6006",
+      "name": "Pampers Progressi Maxi Taglia 4 (7-18 kg) Box Scorta Mensile 156 Pannolini",
+      "category": "baby_care",
+      "brand": "Pampers",
+      "cycle_days": 20,
+      "virality_score": 88,
+      "current_price": 49.90,
+      "list_price": 72.00,
+      "all_time_low": 48.50,
+      "avg_price_30d": 65.00,
+      "avg_price_90d": 67.50,
+      "affiliate_url": "https://www.amazon.it/dp/B09MNO6006?tag=dealtracker-21",
+      "is_all_time_low": false,
+      "discount_vs_avg30": 23.2
+    },
+    {
+      "id": "SKU-COFFEE-001",
+      "asin": "B07PQR7007",
+      "name": "Caffè Borbone Miscela Nera - Confezione da 150 Cialde ESE 44mm Compostabili",
+      "category": "coffee_specialty_food",
+      "brand": "Borbone",
+      "cycle_days": 30,
+      "virality_score": 91,
+      "current_price": 17.80,
+      "list_price": 24.90,
+      "all_time_low": 17.50,
+      "avg_price_30d": 22.80,
+      "avg_price_90d": 23.40,
+      "affiliate_url": "https://www.amazon.it/dp/B07PQR7007?tag=dealtracker-21",
+      "is_all_time_low": false,
+      "discount_vs_avg30": 21.9
+    }
+  ]
+}

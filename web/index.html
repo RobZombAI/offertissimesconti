@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OffertissimeSconti | Il Radar dei Minimi Storici e Offerte su Amazon</title>
+  <meta name="description" content="OffertissimeSconti monitora oltre 3.000 prodotti ciclici e virali su Amazon. Scopri i veri ribassi di prezzo, grafici storici stile Keepa e allarmi minimi storici in tempo reale.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Announcement Bar -->
+  <aside class="top-bar" aria-label="Annuncio">
+    <div class="container top-bar-content">
+      <span>🔥 <strong>Radar Attivo:</strong> Rilevati oltre 100 minimi storici reali nelle ultime 24 ore su Amazon!</span>
+      <a href="https://t.me/offertissimesconti_bot" target="_blank" rel="noopener" class="top-bar-link">Unisciti al Bot Telegram ↗</a>
+    </div>
+  </aside>
+
+  <!-- Main Navigation -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="/" class="brand-logo" aria-label="Home OffertissimeSconti">
+        <span class="logo-icon">⚡</span>
+        <div class="logo-text">
+          <span class="logo-main">OFFERTISSIME</span><span class="logo-accent">SCONTI</span>
+          <span class="logo-tagline">Price Radar & Keepa Tracker</span>
+        </div>
+      </a>
+
+      <nav class="nav-menu" aria-label="Navigazione Principale">
+        <a href="#offerte" class="nav-link active">Offerte del Giorno</a>
+        <a href="#minimi-storici" class="nav-link" id="nav-atl">Minimi Storici 🏆</a>
+        <a href="#ciclici" class="nav-link" id="nav-cyclical">Spesa Ciclica 🔄</a>
+        <a href="#chi-siamo" class="nav-link">Chi Siamo</a>
+        <a href="#come-funziona" class="nav-link">Come Funziona</a>
+      </nav>
+
+      <div class="header-actions">
+        <a href="https://t.me/offertissimesconti_bot" target="_blank" rel="noopener" class="btn btn-telegram">
+          <svg class="tg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06-.01.19-.04.34z"/>
+          </svg>
+          Canale Telegram
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-container">
+      <div class="hero-badge">Tecnologia Keepa-Style • 3.380+ Prodotti Monitorati 24/7</div>
+      <h1 class="hero-title">Non comprare mai più a prezzo pieno su Amazon.</h1>
+      <p class="hero-subtitle">
+        Il nostro algoritmo confronta costantemente i prezzi con la <strong>media storica degli ultimi 90 giorni</strong>, scovando i veri minimi storici ed eliminando per sempre i finti sconti promozionali.
+      </p>
+
+      <!-- Search Bar -->
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Cerca tra 3.000 prodotti (es. capsule caffè, COSRX, creatina, Pampers, cavo Anker...)" autocomplete="off">
+        <button id="searchBtn" class="btn btn-primary">Cerca Sconti</button>
+      </div>
+
+      <!-- Quick Category Chips -->
+      <div class="chips-container" id="categoryChips">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Stats Bar -->
+  <section class="stats-section">
+    <div class="container stats-grid">
+      <div class="stat-card">
+        <span class="stat-num" id="statProducts">3.380</span>
+        <span class="stat-label">Prodotti Tracciati 24/7</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="statCategories">15</span>
+        <span class="stat-label">Dipartimenti Amazon</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">28.4%</span>
+        <span class="stat-label">Ribasso Medio Rilevato</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num">100%</span>
+        <span class="stat-label">Gratuito & Trasparente</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deals & Catalog Section -->
+  <main class="main-content container" id="offerte">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Radar Offerte in Tempo Reale</h2>
+        <p class="section-desc">Prodotti attualmente al di sotto della loro media di prezzo storica.</p>
+      </div>
+
+      <!-- Filters & Tabs -->
+      <div class="filters-toolbar">
+        <div class="filter-tabs">
+          <button class="tab-btn active" data-filter="all">Tutte le Offerte</button>
+          <button class="tab-btn" data-filter="atl">🏆 Minimi Storici</button>
+          <button class="tab-btn" data-filter="cyclical">🔄 Spesa Ciclica</button>
+          <button class="tab-btn" data-filter="viral">⚡ Trend Virali</button>
+        </div>
+
+        <div class="filter-dropdowns">
+          <select id="categorySelect" aria-label="Filtra per Categoria">
+            <option value="">Tutte le Categorie (15)</option>
+          </select>
+
+          <select id="discountSelect" aria-label="Sconto Minimo">
+            <option value="0">Tutti i Ribassi</option>
+            <option value="15">Sconto ≥ 15%</option>
+            <option value="25">Sconto ≥ 25%</option>
+            <option value="35">Sconto ≥ 35%</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Filters Badge / Counter -->
+    <div class="results-info">
+      <span id="resultsCount">Caricamento prodotti in corso...</span>
+    </div>
+
+    <!-- Products Grid -->
+    <div class="products-grid" id="productsGrid">
+      <!-- Injected via JavaScript -->
+    </div>
+
+    <!-- Pagination / Load More -->
+    <div class="load-more-container">
+      <button id="loadMoreBtn" class="btn btn-outline">Carica Altri Prodotti</button>
+    </div>
+  </main>
+
+  <!-- How It Works Section -->
+  <section class="info-section bg-alt" id="come-funziona">
+    <div class="container">
+      <div class="section-header text-center">
+        <h2 class="section-title">Come Funziona il Motore di OffertissimeSconti</h2>
+        <p class="section-desc">Trasparenza totale: ecco perché i nostri dati ti fanno risparmiare fino al 40% ogni mese.</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-icon">📡</div>
+          <h3>1. Polling Costante Prezzi</h3>
+          <p>I nostri server interrogano Amazon ogni ora, registrando ogni variazione di prezzo di oltre 3.000 prodotti ad alta frequenza di acquisto.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon">📉</div>
+          <h3>2. Calcolo Media Storica Keepa</h3>
+          <p>Confrontiamo il prezzo di oggi con la media mobile degli ultimi 30 e 90 giorni. Se il prezzo di listino è stato gonfiato per fingere uno sconto, il nostro algoritmo lo scarta.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-icon">🔔</div>
+          <h3>3. Allarme Minimo Storico Istantaneo</h3>
+          <p>Non appena un prodotto tocca il suo minimo storico o scende sotto la soglia desiderata, inviamo l'avviso immediato nel Bot Telegram e sul sito.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About Us Section (Crucial for Amazon Associates Approval) -->
+  <section class="about-section container" id="chi-siamo">
+    <div class="about-card">
+      <div class="about-content">
+        <h2>Chi Siamo & La Nostra Missione</h2>
+        <p>
+          <strong>OffertissimeSconti</strong> nasce come osservatorio indipendente per aiutare i consumatori a fare acquisti intelligenti su Amazon.
+          Viviamo in un'epoca in cui i prezzi degli e-commerce cambiano decine di volte al giorno e molti "sconti" sono solo prezzi gonfiati ad arte.
+        </p>
+        <p>
+          La nostra missione è fornire <strong>dati oggettivi, storici e trasparenti</strong> su consumabili ciclici (caffè, integratori, detersivi, cura personale, prodotti per bambini e animali) e gadget tecnologici di tendenza.
+          Grazie al nostro database, ogni utente può verificare se l'offerta del giorno è un affare reale o solo marketing.
+        </p>
+        <div class="about-badges">
+          <span>✓ Monitoraggio Indipendente</span>
+          <span>✓ Zero Costi per l'Utente</span>
+          <span>✓ Algoritmo Anti-Falso Sconto</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Telegram CTA Section -->
+  <section class="cta-banner container">
+    <div class="cta-banner-content">
+      <div class="cta-text">
+        <h2>Non farti sfuggire i cali di prezzo lampo!</h2>
+        <p>Molti minimi storici durano meno di 4 ore. Ricevi gli alert in tempo reale sul nostro Bot Telegram gratuito.</p>
+      </div>
+      <a href="https://t.me/offertissimesconti_bot" target="_blank" rel="noopener" class="btn btn-telegram-large">
+        ⚡ Avvia il Bot Telegram Gratuito
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer with Mandatory Amazon Disclosure -->
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-col footer-brand">
+        <div class="brand-logo footer-logo">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-main">OFFERTISSIME</span><span class="logo-accent">SCONTI</span>
+        </div>
+        <p class="footer-text">
+          La piattaforma di riferimento per il tracciamento dei prezzi, minimi storici e offerte verificate su Amazon.
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Navigazione</h4>
+        <ul class="footer-links">
+          <li><a href="#offerte">Offerte del Giorno</a></li>
+          <li><a href="#minimi-storici">Minimi Storici 🏆</a></li>
+          <li><a href="#ciclici">Spesa Ciclica 🔄</a></li>
+          <li><a href="#come-funziona">Come Funziona</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Informazioni Legali</h4>
+        <ul class="footer-links">
+          <li><a href="#privacy">Informativa Privacy</a></li>
+          <li><a href="#termini">Termini di Utilizzo</a></li>
+          <li><a href="#cookie">Cookie Policy</a></li>
+          <li><a href="#contatti">Contatti</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Canali Ufficiali</h4>
+        <ul class="footer-links">
+          <li><a href="https://t.me/offertissimesconti_bot" target="_blank" rel="noopener">Bot Telegram Ufficiale</a></li>
+          <li><a href="https://t.me/offertissimesconti" target="_blank" rel="noopener">Canale Offerte Telegram</a></li>
+          <li><a href="mailto:info@offertissimesconti.it">Supporto Email</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Mandatory Legal Amazon Disclosure Bar -->
+    <div class="footer-disclosure">
+      <div class="container">
+        <p class="amazon-disclaimer">
+          <strong>Dichiarazione di Affiliazione Amazon:</strong> OffertissimeSconti partecipa al Programma Affiliazione Amazon Europe S.à r.l., un programma pubblicitario di affiliazione progettato per fornire ai siti un mezzo per guadagnare commissioni pubblicitarie mediante la creazione di collegamenti ad Amazon.it. In qualità di Affiliato Amazon, OffertissimeSconti riceve un guadagno per ciascun acquisto idoneo.
+        </p>
+        <p class="disclaimer-sub">
+          I prezzi e la disponibilità dei prodotti sono accurati alla data e ora indicata e sono soggetti a modifiche. Qualsiasi informazione di prezzo e disponibilità visualizzata su Amazon al momento dell'acquisto si applicherà all'acquisto del prodotto. Amazon e il logo Amazon sono marchi registrati di Amazon.com, Inc. o delle sue affiliate.
+        </p>
+        <p class="copyright">
+          © 2026 OffertissimeSconti. Tutti i diritti riservati. Piattaforma indipendente di monitoraggio prezzi e comparazione commerciale.
+        </p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal: Imposta Allerta Prezzo -->
+  <dialog id="alertDialog" class="modal-dialog">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modalTitle">Imposta Allerta Prezzo</h3>
+        <button id="closeModalBtn" class="close-btn" aria-label="Chiudi finestra">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="modalProductName" class="modal-product-name"></p>
+        <div class="modal-prices">
+          <div>Prezzo Attuale: <strong id="modalCurrentPrice">€0.00</strong></div>
+          <div>Minimo Storico: <strong id="modalAtlPrice" class="text-green">€0.00</strong></div>
+        </div>
+
+        <form id="alertForm">
+          <label for="targetPriceInput">Avvisami quando scende sotto questo prezzo (€):</label>
+          <input type="number" id="targetPriceInput" step="0.10" min="1" required>
+
+          <label for="contactInput">Tuo Username Telegram o Email per la notifica:</label>
+          <input type="text" id="contactInput" placeholder="@tuo_username o tua@email.it" required>
+
+          <button type="submit" class="btn btn-primary btn-block">Salva Allerta Personale</button>
+        </form>
+        <div id="alertFeedback" class="alert-feedback hidden"></div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
