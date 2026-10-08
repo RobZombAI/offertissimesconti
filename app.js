@@ -414,20 +414,58 @@ async function loadProducts(reset = true) {
     filtered.sort((a, b) => (b.keepa_drop_percent || 0) - (a.keepa_drop_percent || 0));
   }
 
+  // Ricerca Live Diretta su Amazon tramite API quando il tab è attivo o se 0 prodotti locali trovati
+  let isLiveResults = false;
+  if (API_BASE && (activeFilter === 'live_amazon' || (searchQuery && filtered.length === 0))) {
+    const term = searchQuery || 'offerte del giorno';
+    resultsCount.textContent = `Interrogazione Amazon.it in tempo reale per "${term}"...`;
+    try {
+      const liveRes = await fetch(`${API_BASE}/api/search_amazon?q=${encodeURIComponent(term)}&limit=24`);
+      if (liveRes.ok) {
+        const liveData = await liveRes.json();
+        if (liveData.success && liveData.results && liveData.results.length > 0) {
+          filtered = liveData.results;
+          isLiveResults = true;
+        }
+      }
+    } catch (err) {
+      console.warn("Ricerca live su Amazon non disponibile:", err);
+    }
+  }
+
   // Gestione Universal Amazon Search Banner per ricerche attive
   const banner = document.getElementById('universalSearchBanner');
   if (banner) {
     if (searchQuery) {
       banner.classList.remove('hidden');
       const encodedQ = encodeURIComponent(searchQuery);
-      banner.innerHTML = `
-        <div class="search-banner-inner">
-          <span>🔎 Risultati per "<strong>${escapeHtml(searchQuery)}</strong>" nei 3.200 minimi storici monitorati. Vuoi esplorare l'intero catalogo Amazon?</span>
-          <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Cerca qualsiasi prodotto su Amazon.it con link affiliato">
-            🛒 Cerca su tutto Amazon.it ↗
-          </a>
-        </div>
-      `;
+      if (isLiveResults) {
+        banner.innerHTML = `
+          <div class="search-banner-inner">
+            <span>🌐 <strong>Risultati Live Amazon.it:</strong> Stai visualizzando i prodotti in tempo reale da Amazon per "<strong>${escapeHtml(searchQuery)}</strong>". Tutti i link includono il tuo tag affiliato.</span>
+            <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Apri direttamente la ricerca su Amazon.it">
+              Apri su Amazon.it ↗
+            </a>
+          </div>
+        `;
+      } else {
+        banner.innerHTML = `
+          <div class="search-banner-inner">
+            <span>🔎 Risultati radar per "<strong>${escapeHtml(searchQuery)}</strong>". Vuoi caricare tutti i prodotti identici alla ricerca Amazon?</span>
+            <button type="button" class="btn-banner-amazon" id="btnSwitchLiveAmazon" style="border:none; cursor:pointer;" title="Carica risultati live da Amazon">
+              🌐 Mostra Risultati Live Amazon
+            </button>
+          </div>
+        `;
+        setTimeout(() => {
+          document.getElementById('btnSwitchLiveAmazon')?.addEventListener('click', () => {
+            filterTabs.forEach(t => t.classList.remove('active'));
+            document.getElementById('tabLiveAmazon')?.classList.add('active');
+            activeFilter = 'live_amazon';
+            loadProducts(true);
+          });
+        }, 10);
+      }
     } else {
       banner.classList.add('hidden');
       banner.innerHTML = '';
@@ -444,7 +482,11 @@ async function loadProducts(reset = true) {
     renderProducts(pageSlice, false);
   }
 
-  resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${filtered.length} sconti trovati)`;
+  if (isLiveResults) {
+    resultsCount.textContent = `Mostrati ${currentProducts.length} risultati ufficiali da Amazon.it per "${searchQuery || 'offerte'}" (con link affiliato attivo)`;
+  } else {
+    resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${filtered.length} sconti trovati)`;
+  }
   loadMoreBtn.style.display = (currentProducts.length >= filtered.length) ? 'none' : 'inline-flex';
 }
 
@@ -534,6 +576,9 @@ function renderProducts(products, reset) {
       const tr = document.createElement('tr');
       const isAtl = p.current_price <= p.all_time_low;
       const atlBadge = isAtl ? `<span class="badge-atl" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🏆 Minimo Storico</span>` : '';
+      const liveBadge = p.is_live_amazon 
+        ? `<span class="badge-live-amazon" style="display:inline-block; font-size:0.72rem; padding:2px 6px; background:#fef3c7; color:#b45309; border-radius:4px; font-weight:700; border:1px solid #fde68a;">🌐 Live Amazon</span>` 
+        : '';
       const cyclicalBadge = p.is_cyclical 
         ? `<span class="badge-cyclical" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🔄 Ogni ${p.cycle_days}gg</span>` 
         : `<span style="color:#94a3b8; font-size:0.76rem;">Spot</span>`;
@@ -553,7 +598,10 @@ function renderProducts(products, reset) {
             </a>
           </div>
           <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code></div>
-          ${atlBadge}
+          <div style="display:flex; gap:4px; margin-top:2px; flex-wrap:wrap;">
+            ${liveBadge}
+            ${atlBadge}
+          </div>
         </td>
         <td>
           <span style="font-size:0.8rem; font-weight:600; color:#475569;">${p.macro_category_name}</span>
@@ -608,6 +656,9 @@ function renderProducts(products, reset) {
 
     const isAtl = p.current_price <= p.all_time_low;
     const atlBadge = isAtl ? `<span class="badge-atl">🏆 Minimo Storico</span>` : '';
+    const liveBadge = p.is_live_amazon 
+      ? `<span class="badge-live-amazon" style="background:#fef3c7; color:#b45309; font-weight:800; font-size:0.74rem; padding:2px 7px; border-radius:6px; border:1px solid #fde68a;">🌐 Live Amazon</span>` 
+      : '';
     const cyclicalBadge = p.is_cyclical ? `<span class="badge-cyclical">🔄 Riacquisto ogni ${p.cycle_days}gg</span>` : '';
 
     // Genera sparkline SVG con curva storica reale a 90gg e linee benchmark
@@ -618,6 +669,7 @@ function renderProducts(products, reset) {
       <div class="card-top">
         <span class="badge-discount">-${p.keepa_drop_percent}% Reale</span>
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          ${liveBadge}
           ${atlBadge}
           ${cyclicalBadge}
         </div>
