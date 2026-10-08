@@ -31,6 +31,28 @@ function formatAffiliateUrl(url, asin) {
   return `https://www.amazon.it/dp/${targetAsin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}${linkIdParam}&ref_=as_li_ss_tl`;
 }
 
+const CATEGORY_FALLBACK_IMAGES = {
+  beauty_personal_care: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500',
+  health_supplements: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500',
+  grocery_coffee: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500',
+  cleaning_household: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500',
+  baby_care: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500',
+  pet_supplies: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500',
+  electronics_gadgets: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500',
+  home_kitchen: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500',
+  diy_tools_garden: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=500',
+  automotive: 'https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=500',
+  sports_fitness_gear: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500',
+  office_stationery: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=500',
+  apparel_basics: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500',
+  toys_hobbies: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500',
+  books_planners: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500'
+};
+
+function getCategoryFallbackImage(catId) {
+  return CATEGORY_FALLBACK_IMAGES[catId] || 'images/logo.jpg';
+}
+
 function showToast(message, icon = '⚡') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
@@ -588,7 +610,7 @@ function renderProducts(products, reset) {
       tr.innerHTML = `
         <td class="table-img-cell">
           <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" title="Apri su Amazon">
-            <img src="${imgUrl}" alt="${p.title}" class="table-product-thumb" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';">
+            <img src="${imgUrl}" alt="${escapeHtml(p.title)}" class="table-product-thumb" loading="lazy" onload="if(this.naturalWidth<=2||this.naturalHeight<=2){this.onerror=null;this.src=getCategoryFallbackImage('${p.macro_category_id}');}" onerror="this.onerror=null;this.src=getCategoryFallbackImage('${p.macro_category_id}');">
           </a>
         </td>
         <td class="table-product-cell">
@@ -677,7 +699,7 @@ function renderProducts(products, reset) {
 
       <!-- Real Product Image Preview -->
       <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="card-img-box" title="Apri offerta reale su Amazon.it">
-        <img src="${imgUrl}" alt="${p.title}" class="card-product-img" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';">
+        <img src="${imgUrl}" alt="${escapeHtml(p.title)}" class="card-product-img" loading="lazy" onload="if(this.naturalWidth<=2||this.naturalHeight<=2){this.onerror=null;this.src=getCategoryFallbackImage('${p.macro_category_id}');}" onerror="this.onerror=null;this.src=getCategoryFallbackImage('${p.macro_category_id}');">
       </a>
 
       <div class="card-category">${p.macro_category_name} • <strong>${p.brand}</strong></div>
@@ -934,7 +956,7 @@ function openPriceChartModal(skuId, initialRange = '1y') {
   modalBody.innerHTML = `
     <!-- Product Header Banner -->
     <div class="chart-meta-banner">
-      <img src="${imgUrl}" alt="${p.title}" class="chart-meta-thumb" onerror="this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';">
+      <img src="${imgUrl}" alt="${escapeHtml(p.title)}" class="chart-meta-thumb" onload="if(this.naturalWidth<=2||this.naturalHeight<=2){this.onerror=null;this.src=getCategoryFallbackImage('${p.macro_category_id}');}" onerror="this.onerror=null;this.src=getCategoryFallbackImage('${p.macro_category_id}');">
       <div class="chart-meta-info">
         <h4>${p.title}</h4>
         <div class="chart-meta-tags">
