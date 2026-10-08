@@ -76,5 +76,22 @@ class TestFrontendAssets(unittest.TestCase):
         self.assertIn("/api/track", js)
         self.assertTrue("generateRadarSparkline" in js or "generateKeepaSparkline" in js, "Manca funzione generatore sparkline radar")
 
+    def test_static_json_catalog_and_categories(self):
+        cat_file = os.path.join(WEB_DIR, "categories.json")
+        prod_file = os.path.join(WEB_DIR, "catalog.json")
+        self.assertTrue(os.path.exists(cat_file))
+        self.assertTrue(os.path.exists(prod_file))
+
+        import json
+        with open(cat_file, "r", encoding="utf-8") as f:
+            cat_data = json.load(f)
+        self.assertTrue(cat_data.get("success"))
+        self.assertEqual(len(cat_data.get("categories", [])), 15)
+
+        with open(prod_file, "r", encoding="utf-8") as f:
+            prod_data = json.load(f)
+        self.assertTrue(prod_data.get("success"))
+        self.assertGreaterEqual(prod_data.get("total", 0), 3200)
+
 if __name__ == "__main__":
     unittest.main()

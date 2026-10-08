@@ -71,7 +71,7 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
         if path == "/" or path == "/index.html":
             self._serve_static(os.path.join(WEB_DIR, "index.html"))
             return
-        elif path in ("/style.css", "/app.js", "/offertissimesconti_posttap_export.csv", "/offertissimesconti_links_only.txt"):
+        elif path in ("/style.css", "/app.js", "/categories.json", "/catalog.json", "/offertissimesconti_posttap_export.csv", "/offertissimesconti_links_only.txt"):
             self._serve_static(os.path.join(WEB_DIR, path.lstrip("/")))
             return
 

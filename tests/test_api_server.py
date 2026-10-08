@@ -78,6 +78,15 @@ class TestApiServer(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertIn("OFFERTISSIMESCONTI", body)
 
+    def test_static_categories_and_catalog_json(self):
+        status, body, headers = self._fetch("/categories.json")
+        self.assertEqual(status, 200)
+        self.assertIn("grocery_coffee", body)
+
+        status2, body2, headers2 = self._fetch("/catalog.json")
+        self.assertEqual(status2, 200)
+        self.assertIn("products", body2)
+
     def test_options_cors(self):
         status, body, headers = self._fetch("/api/products", method="OPTIONS")
         self.assertEqual(status, 200)
