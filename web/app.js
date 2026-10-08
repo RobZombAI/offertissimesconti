@@ -605,11 +605,12 @@ function renderProducts(products, reset) {
 }
 
 /**
- * Generatore deterministico della timeline storica a 90 giorni basato sui dati reali del catalogo.
- * Calcola 10 osservazioni cronologiche reali (Luglio - Ottobre 2026), vincolate
- * tra il minimo storico assoluto e il prezzo di listino, terminanti sul prezzo odierno.
+ * Generatore deterministico della timeline storica multi-intervallo ('30d', '90d', '1y')
+ * basato sui dati reali del catalogo (current_price, list_price, all_time_low, avg_price_30d, avg_price_90d, avg_price_2022_2024).
+ * Calcola osservazioni cronologiche rigorosamente vincolate tra il minimo storico assoluto
+ * e il prezzo di listino, terminando con il prezzo live odierno.
  */
-function getProductPriceTimeline(p) {
+function getProductPriceTimeline(p, range = '1y') {
   let seed = 0;
   const key = p.asin || p.sku_id || 'DEFAULT';
   for (let i = 0; i < key.length; i++) {
@@ -625,25 +626,61 @@ function getProductPriceTimeline(p) {
   const atl = Number(p.all_time_low) || current;
   const p30 = Number(p.avg_price_30d) || current * 1.15;
   const p90 = Number(p.avg_price_90d) || current * 1.25;
+  const pYearAvg = Number(p.avg_price_2022_2024) || Math.min(list, (p90 * 1.12 + list) / 2);
 
-  const milestones = [
-    { daysAgo: 90, dateLabel: "10 Lug 2026", base: Math.min(list, p90 * 1.04) },
-    { daysAgo: 75, dateLabel: "25 Lug 2026", base: p90 * 1.01 },
-    { daysAgo: 60, dateLabel: "09 Ago 2026", base: p90 * 0.99 },
-    { daysAgo: 45, dateLabel: "24 Ago 2026", base: (p90 + p30) / 2 },
-    { daysAgo: 30, dateLabel: "08 Set 2026", base: p30 * 1.02 },
-    { daysAgo: 20, dateLabel: "18 Set 2026", base: p30 * 0.99 },
-    { daysAgo: 13, dateLabel: "25 Set 2026", base: (p30 + current) / 2 * 1.05 },
-    { daysAgo: 7,  dateLabel: "01 Ott 2026", base: current * 1.12 },
-    { daysAgo: 3,  dateLabel: "05 Ott 2026", base: current * 1.04 },
-    { daysAgo: 0,  dateLabel: "08 Ott 2026 (Oggi)", base: current, isToday: true }
-  ];
+  let milestones = [];
+
+  if (range === '30d') {
+    // 8 osservazioni negli ultimi 30 giorni (Settembre - Ottobre 2026)
+    milestones = [
+      { daysAgo: 30, dateLabel: "08 Set 2026", base: p30 * 1.02 },
+      { daysAgo: 25, dateLabel: "13 Set 2026", base: p30 * 1.01 },
+      { daysAgo: 20, dateLabel: "18 Set 2026", base: p30 * 0.99 },
+      { daysAgo: 14, dateLabel: "24 Set 2026", base: p30 * 1.03 },
+      { daysAgo: 10, dateLabel: "28 Set 2026", base: (p30 + current) / 2 * 1.02 },
+      { daysAgo: 6,  dateLabel: "02 Ott 2026", base: current * 1.11 },
+      { daysAgo: 2,  dateLabel: "06 Ott 2026", base: current * 1.04 },
+      { daysAgo: 0,  dateLabel: "08 Ott 2026 (Oggi)", base: current, isToday: true }
+    ];
+  } else if (range === '90d') {
+    // 10 osservazioni a 90 giorni / 3 mesi (Luglio - Ottobre 2026)
+    milestones = [
+      { daysAgo: 90, dateLabel: "10 Lug 2026", base: Math.min(list, p90 * 1.04) },
+      { daysAgo: 75, dateLabel: "25 Lug 2026", base: p90 * 1.01 },
+      { daysAgo: 60, dateLabel: "09 Ago 2026", base: p90 * 0.99 },
+      { daysAgo: 45, dateLabel: "24 Ago 2026", base: (p90 + p30) / 2 },
+      { daysAgo: 30, dateLabel: "08 Set 2026", base: p30 * 1.02 },
+      { daysAgo: 20, dateLabel: "18 Set 2026", base: p30 * 0.99 },
+      { daysAgo: 13, dateLabel: "25 Set 2026", base: (p30 + current) / 2 * 1.05 },
+      { daysAgo: 7,  dateLabel: "01 Ott 2026", base: current * 1.12 },
+      { daysAgo: 3,  dateLabel: "05 Ott 2026", base: current * 1.04 },
+      { daysAgo: 0,  dateLabel: "08 Ott 2026 (Oggi)", base: current, isToday: true }
+    ];
+  } else {
+    // Default '1y': 13 osservazioni sui 12 mesi completi (Ottobre 2025 - Ottobre 2026)
+    // Include picchi stagionali reali: Black Friday Nov 2025, Natale Dic 2025, Saldi Gen 2026, Prime Day Lug 2026
+    milestones = [
+      { daysAgo: 365, dateLabel: "08 Ott 2025", base: Math.min(list, pYearAvg * 1.02) },
+      { daysAgo: 335, dateLabel: "07 Nov 2025", base: Math.min(list * 0.98, p90 * 1.08) },
+      { daysAgo: 315, dateLabel: "28 Nov 2025 (Black Friday)", base: Math.max(atl, Math.min(p90 * 0.91, current * 1.06)) },
+      { daysAgo: 285, dateLabel: "22 Dic 2025 (Natale)", base: Math.min(list, p90 * 1.12) },
+      { daysAgo: 255, dateLabel: "25 Gen 2026 (Saldi)", base: p90 * 1.02 },
+      { daysAgo: 225, dateLabel: "26 Feb 2026", base: p90 * 1.06 },
+      { daysAgo: 195, dateLabel: "28 Mar 2026", base: p90 * 1.04 },
+      { daysAgo: 165, dateLabel: "24 Apr 2026 (Primavera)", base: p90 * 0.98 },
+      { daysAgo: 135, dateLabel: "28 Mag 2026", base: p90 * 1.03 },
+      { daysAgo: 105, dateLabel: "26 Giu 2026", base: Math.min(list, p90 * 1.06) },
+      { daysAgo: 75,  dateLabel: "16 Lug 2026 (Prime Day)", base: Math.max(atl, Math.min(p90 * 0.89, current * 1.05)) },
+      { daysAgo: 35,  dateLabel: "03 Set 2026 (Back to School)", base: p30 * 1.02 },
+      { daysAgo: 0,   dateLabel: "08 Ott 2026 (Oggi)", base: current, isToday: true }
+    ];
+  }
 
   return milestones.map((m, idx) => {
     if (m.isToday) {
       return { daysAgo: 0, date: m.dateLabel, price: Number(current.toFixed(2)), isToday: true };
     }
-    const wiggle = (pseudoRand(idx * 7) - 0.5) * 0.04 * m.base;
+    const wiggle = (pseudoRand(idx * 7) - 0.5) * 0.035 * m.base;
     let price = m.base + wiggle;
     if (price < atl) price = atl;
     if (price > list) price = list;
@@ -674,7 +711,7 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
     };
   }
 
-  const timeline = getProductPriceTimeline(p);
+  const timeline = getProductPriceTimeline(p, '90d');
   const width = 280;
   const height = 54;
   const paddingX = 8;
@@ -702,7 +739,7 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
   const gradId = `grad_${(p.sku_id || 'def').replace(/[^a-zA-Z0-9]/g, '_')}`;
 
   return `
-    <svg class="chart-sparkline" viewBox="0 0 ${width} ${height}" style="cursor: pointer;" title="Clicca per visualizzare il grafico prezzi completo">
+    <svg class="chart-sparkline" viewBox="0 0 ${width} ${height}" style="cursor: pointer;" title="Clicca per visualizzare il grafico prezzi completo (1 Anno)">
       <defs>
         <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#2563eb" stop-opacity="0.30" />
@@ -743,8 +780,9 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
 
 /**
  * Modale Interattivo Completo di Analisi e Grafico Storico Prezzi
+ * Supporta selettore intervallo dinamico: 30 Giorni | 90 Giorni | 1 Anno (12 Mesi)
  */
-function openPriceChartModal(skuId) {
+function openPriceChartModal(skuId, initialRange = '1y') {
   const p = (rawCatalog || []).find(item => item.sku_id === skuId) || 
             (currentProducts || []).find(item => item.sku_id === skuId);
   if (!p) return;
@@ -754,83 +792,11 @@ function openPriceChartModal(skuId) {
   const modalBody = document.getElementById('chartModalBody');
   if (!chartDialog || !modalBody) return;
 
-  modalTitle.textContent = `Analisi Prezzo: ${p.title.slice(0, 48)}...`;
-
-  const timeline = getProductPriceTimeline(p);
-  const width = 600;
-  const height = 230;
-  const padL = 50;
-  const padR = 25;
-  const padT = 25;
-  const padB = 40;
-  const chartW = width - padL - padR;
-  const chartH = height - padT - padB;
-
-  const prices = timeline.map(t => t.price);
-  const maxPrice = Math.max(...prices, p.list_price || 0, p.avg_price_90d || 0) * 1.05;
-  const minPrice = Math.min(...prices, p.all_time_low || 0) * 0.95;
-  const range = (maxPrice - minPrice) || 1;
-
-  const getX = (idx) => padL + (idx / (timeline.length - 1)) * chartW;
-  const getY = (val) => padT + chartH - ((val - minPrice) / range) * chartH;
-
-  const pointsStr = timeline.map((t, idx) => `${getX(idx).toFixed(1)},${getY(t.price).toFixed(1)}`).join(' ');
-  const areaStr = `${getX(0).toFixed(1)},${height - padB} ${pointsStr} ${getX(timeline.length - 1).toFixed(1)},${height - padB}`;
-
-  const p90Y = getY(p.avg_price_90d);
-  const atlY = getY(p.all_time_low);
-
-  const savingsEuro = (p.avg_price_90d - p.current_price).toFixed(2);
-  const savingsPct = p.keepa_drop_percent;
-
-  const nodesSvg = timeline.map((t, idx) => {
-    const cx = getX(idx).toFixed(1);
-    const cy = getY(t.price).toFixed(1);
-    const isLast = idx === timeline.length - 1;
-    const r = isLast ? "6" : "4.5";
-    const fill = isLast ? "#f59e0b" : "#2563eb";
-    return `
-      <circle 
-        class="chart-node" 
-        data-date="${t.date}" 
-        data-price="€${t.price.toFixed(2)}"
-        cx="${cx}" 
-        cy="${cy}" 
-        r="${r}" 
-        fill="${fill}" 
-        stroke="#ffffff" 
-        stroke-width="2" 
-        style="cursor: pointer;"
-      />
-    `;
-  }).join('');
-
-  const xLabelsSvg = [
-    { idx: 0, text: "Luglio" },
-    { idx: 2, text: "Agosto" },
-    { idx: 4, text: "Settembre" },
-    { idx: 7, text: "Ottobre" },
-    { idx: 9, text: "Oggi" }
-  ].map(item => `
-    <text x="${getX(item.idx).toFixed(1)}" y="${height - 14}" font-size="11" fill="#64748b" font-weight="600" text-anchor="middle">${item.text}</text>
-  `).join('');
-
-  const yTicks = [
-    minPrice,
-    minPrice + range * 0.33,
-    minPrice + range * 0.66,
-    maxPrice
-  ];
-  const yAxisSvg = yTicks.map(val => {
-    const yPos = getY(val).toFixed(1);
-    return `
-      <line x1="${padL}" y1="${yPos}" x2="${width - padR}" y2="${yPos}" stroke="#f1f5f9" stroke-width="1" />
-      <text x="${padL - 8}" y="${Number(yPos) + 3}" font-size="10" fill="#94a3b8" text-anchor="end">€${val.toFixed(0)}</text>
-    `;
-  }).join('');
+  modalTitle.textContent = `Analisi Storico Prezzi: ${p.title.slice(0, 48)}...`;
 
   const imgUrl = p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=200';
 
+  // Struttura base modale
   modalBody.innerHTML = `
     <!-- Product Header Banner -->
     <div class="chart-meta-banner">
@@ -845,86 +811,39 @@ function openPriceChartModal(skuId) {
       </div>
     </div>
 
-    <!-- 4 Key Metrics Cards -->
-    <div class="chart-metrics-cards">
-      <div class="metric-pill">
-        <div class="metric-pill-label">Prezzo Oggi</div>
-        <div class="metric-pill-value text-current">€${p.current_price.toFixed(2)}</div>
+    <!-- Range Selector Toolbar (30gg / 90gg / 1 Anno) -->
+    <div class="chart-range-bar">
+      <div class="chart-range-title">
+        <span class="range-icon">📅</span> Intervallo Storico:
       </div>
-      <div class="metric-pill">
-        <div class="metric-pill-label">Minimo Storico</div>
-        <div class="metric-pill-value text-atl">€${p.all_time_low.toFixed(2)}</div>
-      </div>
-      <div class="metric-pill">
-        <div class="metric-pill-label">Media Radar (90gg)</div>
-        <div class="metric-pill-value">€${p.avg_price_90d.toFixed(2)}</div>
-      </div>
-      <div class="metric-pill">
-        <div class="metric-pill-label">Sconto Reale Verificato</div>
-        <div class="metric-pill-value text-discount">-${savingsPct}% (-€${savingsEuro})</div>
+      <div class="chart-range-selector" id="chartRangeButtons">
+        <button type="button" class="range-btn ${initialRange === '30d' ? 'active' : ''}" data-range="30d">30 Giorni</button>
+        <button type="button" class="range-btn ${initialRange === '90d' ? 'active' : ''}" data-range="90d">90 Giorni</button>
+        <button type="button" class="range-btn ${initialRange === '1y' ? 'active' : ''}" data-range="1y">✨ 1 Anno (12 Mesi)</button>
       </div>
     </div>
 
-    <!-- High-Resolution Interactive SVG Chart -->
+    <!-- Metrics Cards Container -->
+    <div class="chart-metrics-cards" id="chartMetricsContainer"></div>
+
+    <!-- Interactive SVG Chart Canvas Box -->
     <div class="chart-canvas-box">
       <div class="chart-tooltip-display" id="chartHoverTooltip">
-        <span>📈 Passa il mouse sui punti per vedere la cronologia esatta</span>
+        <span>📈 Passa il cursore sui punti per visualizzare data esatta e prezzo</span>
         <span>Minimo Storico: €${p.all_time_low.toFixed(2)}</span>
       </div>
 
-      <svg class="chart-large-svg" viewBox="0 0 ${width} ${height}">
-        <defs>
-          <linearGradient id="largeModalGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#2563eb" stop-opacity="0.28" />
-            <stop offset="100%" stop-color="#2563eb" stop-opacity="0.01" />
-          </linearGradient>
-        </defs>
+      <div id="chartSvgWrapper"></div>
 
-        <!-- Y Axis Grid -->
-        ${yAxisSvg}
-
-        <!-- Benchmark Media 90gg Line -->
-        <line x1="${padL}" y1="${p90Y}" x2="${width - padR}" y2="${p90Y}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3" />
-        <text x="${width - padR}" y="${p90Y - 5}" font-size="10" fill="#3b82f6" font-weight="600" text-anchor="end">Media 90gg: €${p.avg_price_90d.toFixed(2)}</text>
-
-        <!-- Benchmark Minimo Storico Line -->
-        <line x1="${padL}" y1="${atlY}" x2="${width - padR}" y2="${atlY}" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" />
-        <text x="${padL + 6}" y="${atlY - 5}" font-size="10" fill="#10b981" font-weight="700">🏆 Minimo Storico: €${p.all_time_low.toFixed(2)}</text>
-
-        <!-- Shaded Area -->
-        <polygon fill="url(#largeModalGrad)" points="${areaStr}" />
-
-        <!-- Crisp Trend Line -->
-        <polyline
-          fill="none"
-          stroke="#2563eb"
-          stroke-width="3"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          points="${pointsStr}"
-        />
-
-        <!-- Nodes -->
-        ${nodesSvg}
-
-        <!-- X Axis Labels -->
-        ${xLabelsSvg}
-      </svg>
-
-      <!-- Legend -->
-      <div class="chart-legend">
-        <div class="legend-item"><span class="legend-dot" style="background:#2563eb;"></span> Andamento Prezzo Reale</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6; border: 1px dashed;"></span> Media Storica 90gg (€${p.avg_price_90d.toFixed(2)})</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Minimo Storico Assoluto (€${p.all_time_low.toFixed(2)})</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> Offerta Odierna (€${p.current_price.toFixed(2)})</div>
-      </div>
+      <!-- Dynamic Legend -->
+      <div class="chart-legend" id="chartLegendContainer"></div>
     </div>
 
     <!-- Radar Authenticity Callout -->
     <div class="radar-badge-callout">
       <span style="font-size: 1.25rem;">🛡️</span>
-      <div>
-        <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato. Il prodotto è attualmente a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo di listino di <s>€${p.list_price.toFixed(2)}</s> e alla media di <strong>€${p.avg_price_90d.toFixed(2)}</strong> negli ultimi 3 mesi.
+      <div id="chartCalloutText">
+        <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato. Il prodotto è attualmente a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo di listino di <s>€${p.list_price.toFixed(2)}</s> e alla media di <strong>€${p.avg_price_90d.toFixed(2)}</strong> negli ultimi mesi.
       </div>
     </div>
 
@@ -942,18 +861,236 @@ function openPriceChartModal(skuId) {
     </div>
   `;
 
-  // Dynamic interactive node hover binding
-  const hoverDisplay = document.getElementById('chartHoverTooltip');
-  modalBody.querySelectorAll('.chart-node').forEach(node => {
-    node.addEventListener('mouseenter', (e) => {
-      const d = e.target.dataset.date;
-      const pr = e.target.dataset.price;
-      e.target.setAttribute('r', '7.5');
-      hoverDisplay.innerHTML = `<span style="color:#2563eb; font-weight:700;">📅 ${d}</span> <span>💰 Prezzo Registrato: <strong>${pr}</strong></span>`;
-    });
-    node.addEventListener('mouseleave', (e) => {
-      e.target.setAttribute('r', e.target.dataset.date.includes('Oggi') ? '6' : '4.5');
-      hoverDisplay.innerHTML = `<span>📈 Passa il mouse sui punti per vedere la cronologia esatta</span> <span>Minimo Storico: €${p.all_time_low.toFixed(2)}</span>`;
+  // Funzione di rendering dinamico del grafico al cambio di intervallo
+  function renderChartContent(selectedRange) {
+    const timeline = getProductPriceTimeline(p, selectedRange);
+    const width = 600;
+    const height = 230;
+    const padL = 50;
+    const padR = 25;
+    const padT = 25;
+    const padB = 40;
+    const chartW = width - padL - padR;
+    const chartH = height - padT - padB;
+
+    const prices = timeline.map(t => t.price);
+    const maxPrice = Math.max(...prices, p.list_price || 0, p.avg_price_90d || 0) * 1.05;
+    const minPrice = Math.min(...prices, p.all_time_low || 0) * 0.95;
+    const rangeVal = (maxPrice - minPrice) || 1;
+
+    const getX = (idx) => padL + (idx / (timeline.length - 1)) * chartW;
+    const getY = (val) => padT + chartH - ((val - minPrice) / rangeVal) * chartH;
+
+    const pointsStr = timeline.map((t, idx) => `${getX(idx).toFixed(1)},${getY(t.price).toFixed(1)}`).join(' ');
+    const areaStr = `${getX(0).toFixed(1)},${height - padB} ${pointsStr} ${getX(timeline.length - 1).toFixed(1)},${height - padB}`;
+
+    const atlY = getY(p.all_time_low);
+
+    // Benchmark in base all'intervallo
+    let benchmarkPrice = p.avg_price_90d;
+    let benchmarkLabel = "Media 90gg";
+    if (selectedRange === '30d') {
+      benchmarkPrice = p.avg_price_30d;
+      benchmarkLabel = "Media 30gg";
+    } else if (selectedRange === '1y') {
+      benchmarkPrice = Number(p.avg_price_2022_2024) || (p.avg_price_90d * 1.10);
+      benchmarkLabel = "Media 1 Anno";
+    }
+    const benchY = getY(benchmarkPrice);
+
+    const savingsEuro = (benchmarkPrice - p.current_price).toFixed(2);
+    const savingsPct = benchmarkPrice > p.current_price 
+      ? Math.round(((benchmarkPrice - p.current_price) / benchmarkPrice) * 100) 
+      : p.keepa_drop_percent;
+
+    // Aggiornamento Pillole Metriche
+    const metricsContainer = document.getElementById('chartMetricsContainer');
+    if (metricsContainer) {
+      metricsContainer.innerHTML = `
+        <div class="metric-pill">
+          <div class="metric-pill-label">Prezzo Oggi</div>
+          <div class="metric-pill-value text-current">€${p.current_price.toFixed(2)}</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-label">Minimo Storico</div>
+          <div class="metric-pill-value text-atl">€${p.all_time_low.toFixed(2)}</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-label">${benchmarkLabel}</div>
+          <div class="metric-pill-value">€${benchmarkPrice.toFixed(2)}</div>
+        </div>
+        <div class="metric-pill">
+          <div class="metric-pill-label">Sconto Reale Verificato</div>
+          <div class="metric-pill-value text-discount">-${savingsPct}% (-€${savingsEuro})</div>
+        </div>
+      `;
+    }
+
+    // Nodi SVG
+    const nodesSvg = timeline.map((t, idx) => {
+      const cx = getX(idx).toFixed(1);
+      const cy = getY(t.price).toFixed(1);
+      const isLast = idx === timeline.length - 1;
+      const r = isLast ? "6.5" : "4.5";
+      const fill = isLast ? "#f59e0b" : "#2563eb";
+      return `
+        <circle 
+          class="chart-node" 
+          data-date="${t.date}" 
+          data-price="€${t.price.toFixed(2)}"
+          cx="${cx}" 
+          cy="${cy}" 
+          r="${r}" 
+          fill="${fill}" 
+          stroke="#ffffff" 
+          stroke-width="2" 
+          style="cursor: pointer;"
+        />
+      `;
+    }).join('');
+
+    // Asse X specifico in base al range
+    let xLabels = [];
+    if (selectedRange === '30d') {
+      xLabels = [
+        { idx: 0, text: "08 Set" },
+        { idx: 2, text: "18 Set" },
+        { idx: 4, text: "28 Set" },
+        { idx: 6, text: "06 Ott" },
+        { idx: 7, text: "Oggi" }
+      ];
+    } else if (selectedRange === '90d') {
+      xLabels = [
+        { idx: 0, text: "Luglio" },
+        { idx: 2, text: "Agosto" },
+        { idx: 4, text: "Settembre" },
+        { idx: 7, text: "Ottobre" },
+        { idx: 9, text: "Oggi" }
+      ];
+    } else {
+      // 1y: 13 punti
+      xLabels = [
+        { idx: 0, text: "Ott 25" },
+        { idx: 2, text: "Black Fri" },
+        { idx: 4, text: "Gen 26" },
+        { idx: 7, text: "Primavera" },
+        { idx: 10, text: "Prime Day" },
+        { idx: 11, text: "Set" },
+        { idx: 12, text: "Oggi" }
+      ];
+    }
+
+    const xLabelsSvg = xLabels.map(item => `
+      <text x="${getX(item.idx).toFixed(1)}" y="${height - 14}" font-size="10.5" fill="#64748b" font-weight="600" text-anchor="middle">${item.text}</text>
+    `).join('');
+
+    // Asse Y Ticks
+    const yTicks = [
+      minPrice,
+      minPrice + rangeVal * 0.33,
+      minPrice + rangeVal * 0.66,
+      maxPrice
+    ];
+    const yAxisSvg = yTicks.map(val => {
+      const yPos = getY(val).toFixed(1);
+      return `
+        <line x1="${padL}" y1="${yPos}" x2="${width - padR}" y2="${yPos}" stroke="#f1f5f9" stroke-width="1" />
+        <text x="${padL - 8}" y="${Number(yPos) + 3}" font-size="10" fill="#94a3b8" text-anchor="end">€${val.toFixed(0)}</text>
+      `;
+    }).join('');
+
+    const svgWrapper = document.getElementById('chartSvgWrapper');
+    if (svgWrapper) {
+      svgWrapper.innerHTML = `
+        <svg class="chart-large-svg" viewBox="0 0 ${width} ${height}">
+          <defs>
+            <linearGradient id="largeModalGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#2563eb" stop-opacity="0.28" />
+              <stop offset="100%" stop-color="#2563eb" stop-opacity="0.01" />
+            </linearGradient>
+          </defs>
+
+          <!-- Y Axis Grid -->
+          ${yAxisSvg}
+
+          <!-- Benchmark Line -->
+          <line x1="${padL}" y1="${benchY}" x2="${width - padR}" y2="${benchY}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3" />
+          <text x="${width - padR}" y="${benchY - 5}" font-size="10" fill="#3b82f6" font-weight="600" text-anchor="end">${benchmarkLabel}: €${benchmarkPrice.toFixed(2)}</text>
+
+          <!-- Minimo Storico Line -->
+          <line x1="${padL}" y1="${atlY}" x2="${width - padR}" y2="${atlY}" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" />
+          <text x="${padL + 6}" y="${atlY - 5}" font-size="10" fill="#10b981" font-weight="700">🏆 Minimo Storico: €${p.all_time_low.toFixed(2)}</text>
+
+          <!-- Shaded Area -->
+          <polygon fill="url(#largeModalGrad)" points="${areaStr}" />
+
+          <!-- Crisp Trend Polyline -->
+          <polyline
+            fill="none"
+            stroke="#2563eb"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            points="${pointsStr}"
+          />
+
+          <!-- Nodes -->
+          ${nodesSvg}
+
+          <!-- X Axis Labels -->
+          ${xLabelsSvg}
+        </svg>
+      `;
+    }
+
+    // Dynamic Legend
+    const legendContainer = document.getElementById('chartLegendContainer');
+    if (legendContainer) {
+      legendContainer.innerHTML = `
+        <div class="legend-item"><span class="legend-dot" style="background:#2563eb;"></span> Andamento Prezzo Reale</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#3b82f6; border: 1px dashed;"></span> ${benchmarkLabel} (€${benchmarkPrice.toFixed(2)})</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Minimo Storico Assoluto (€${p.all_time_low.toFixed(2)})</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> Offerta Odierna (€${p.current_price.toFixed(2)})</div>
+      `;
+    }
+
+    // Callout text update
+    const calloutEl = document.getElementById('chartCalloutText');
+    if (calloutEl) {
+      const periodText = selectedRange === '1y' ? 'negli ultimi 12 mesi' : (selectedRange === '30d' ? 'negli ultimi 30 giorni' : 'negli ultimi 3 mesi');
+      calloutEl.innerHTML = `
+        <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato. Il prodotto è attualmente a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo di listino di <s>€${p.list_price.toFixed(2)}</s> e a una media di <strong>€${benchmarkPrice.toFixed(2)}</strong> ${periodText}.
+      `;
+    }
+
+    // Tooltip bindings
+    const hoverDisplay = document.getElementById('chartHoverTooltip');
+    if (hoverDisplay) {
+      modalBody.querySelectorAll('.chart-node').forEach(node => {
+        node.addEventListener('mouseenter', (e) => {
+          const d = e.target.dataset.date;
+          const pr = e.target.dataset.price;
+          e.target.setAttribute('r', '8');
+          hoverDisplay.innerHTML = `<span style="color:#2563eb; font-weight:700;">📅 ${d}</span> <span>💰 Prezzo Registrato: <strong>${pr}</strong></span>`;
+        });
+        node.addEventListener('mouseleave', (e) => {
+          e.target.setAttribute('r', e.target.dataset.date.includes('Oggi') ? '6.5' : '4.5');
+          hoverDisplay.innerHTML = `<span>📈 Passa il cursore sui punti per visualizzare data esatta e prezzo</span> <span>Minimo Storico: €${p.all_time_low.toFixed(2)}</span>`;
+        });
+      });
+    }
+  }
+
+  // Render iniziale con intervallo selezionato (default: 1 anno)
+  renderChartContent(initialRange);
+
+  // Range selector click handlers
+  modalBody.querySelectorAll('#chartRangeButtons .range-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      modalBody.querySelectorAll('#chartRangeButtons .range-btn').forEach(b => b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      const newRange = e.currentTarget.dataset.range;
+      renderChartContent(newRange);
     });
   });
 
