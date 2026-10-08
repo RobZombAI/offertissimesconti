@@ -18,6 +18,20 @@ let currentOffset = 0;
 let currentView = 'grid'; // 'grid' | 'list'
 let activeSort = 'drop';
 
+const OFFICIAL_ASSOCIATE_TAG = 'offertissimes-21';
+
+function formatAffiliateUrl(url, asin) {
+  if (!url || typeof url !== 'string') {
+    return `https://www.amazon.it/dp/${asin || ''}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
+  }
+  if (url.includes('tag=' + OFFICIAL_ASSOCIATE_TAG) && url.includes('linkCode=ll2')) {
+    return url;
+  }
+  const match = url.match(/(?:\/dp\/|\/gp\/product\/)([A-Z0-9]{10})/i);
+  const targetAsin = match ? match[1] : (asin || '');
+  return `https://www.amazon.it/dp/${targetAsin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
+}
+
 // DOM Elements
 const productsGrid = document.getElementById('productsGrid');
 const resultsCount = document.getElementById('resultsCount');
@@ -43,6 +57,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupEventListeners() {
+  // Intercettore universale per tutti i link di acquisto Amazon
+  document.addEventListener('click', (e) => {
+    const anchor = e.target.closest('a');
+    if (anchor && anchor.href && (anchor.href.includes('amazon.it') || anchor.href.includes('amzn.to'))) {
+      if (!anchor.href.includes('tag=' + OFFICIAL_ASSOCIATE_TAG)) {
+        anchor.href = formatAffiliateUrl(anchor.href);
+      }
+    }
+  });
+
   // Tabs
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {
@@ -408,7 +432,7 @@ function renderProducts(products, reset) {
         </td>
         <td>
           <div class="table-actions">
-            <a href="${p.affiliate_url}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
+            <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
               Acquista ↗
             </a>
             <button class="btn btn-outline btn-chart-open" data-sku="${p.sku_id}" title="Visualizza grafico storico prezzi reale">
@@ -481,7 +505,7 @@ function renderProducts(products, reset) {
       <div class="price-avg">Media ultimi 30gg: <strong>€${p.avg_price_30d.toFixed(2)}</strong></div>
 
       <div class="card-actions">
-        <a href="${p.affiliate_url}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
+        <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
           Acquista su Amazon ↗
         </a>
         <button class="btn btn-outline btn-chart-open" data-sku="${p.sku_id}" title="Apri analisi e grafico storico">
@@ -838,7 +862,7 @@ function openPriceChartModal(skuId) {
 
     <!-- Action Buttons -->
     <div class="chart-actions-row">
-      <a href="${p.affiliate_url}" target="_blank" rel="noopener sponsored" class="btn-chart-modal-buy">
+      <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn-chart-modal-buy">
         🛒 Acquista al Minimo su Amazon ↗
       </a>
       <button class="btn-chart-modal-track" id="btnChartTrackModal">
