@@ -37,6 +37,25 @@ def get_bot_token() -> str:
 
     return ""
 
+def update_env_channel(channel_id: str):
+    """Aggiorna la variabile TELEGRAM_CHANNEL_ID nel file .env."""
+    env_lines = []
+    found = False
+    if os.path.exists(ENV_FILE):
+        with open(ENV_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("TELEGRAM_CHANNEL_ID="):
+                    env_lines.append(f"TELEGRAM_CHANNEL_ID={channel_id}\n")
+                    found = True
+                else:
+                    env_lines.append(line)
+    if not found:
+        env_lines.append(f"TELEGRAM_CHANNEL_ID={channel_id}\n")
+    with open(ENV_FILE, "w", encoding="utf-8") as f:
+        f.writelines(env_lines)
+    os.environ["TELEGRAM_CHANNEL_ID"] = channel_id
+    print(f"💾 TELEGRAM_CHANNEL_ID aggiornato nel file .env a: {channel_id}")
+
 class OffertissimeScontiTelegramBot:
     def __init__(self, token: str):
         self.token = token
@@ -138,7 +157,8 @@ class OffertissimeScontiTelegramBot:
         url = f"{self.api_url}/getUpdates"
         params = {
             "offset": self.last_update_id + 1,
-            "timeout": 20
+            "timeout": 20,
+            "allowed_updates": json.dumps(["message", "callback_query", "my_chat_member"])
         }
         try:
             res = requests.get(url, params=params, timeout=25)
@@ -460,6 +480,23 @@ class OffertissimeScontiTelegramBot:
                 for p in results:
                     self.send_deal(chat_id, p)
 
+        elif text.startswith("/setchannel") or text.startswith("/canale"):
+            parts = text.split(maxsplit=1)
+            if len(parts) > 1:
+                new_ch = parts[1].strip()
+                if not new_ch.startswith("@") and not new_ch.startswith("-100"):
+                    new_ch = f"@{new_ch}"
+                update_env_channel(new_ch)
+                self.send_message(
+                    chat_id,
+                    f"✅ <b>Canale configurato con successo!</b>\n"
+                    f"🎯 Canale: <code>{new_ch}</code>\n\n"
+                    f"Il nostro broadcaster automatico pubblicherà le offerte a minimo storico su questo canale ogni 10 minuti.\n"
+                    f"<i>(Assicurati di aver aggiunto @offertissimesconti_radar_bot come amministratore con permesso 'Pubblica messaggi')</i>."
+                )
+            else:
+                self.send_message(chat_id, "⚠️ Specifica il canale. Esempio: <code>/setchannel @tuo_canale</code>")
+
         elif text.startswith("/track"):
             parts = text.split()
             if len(parts) < 3:
@@ -696,6 +733,27 @@ class OffertissimeScontiTelegramBot:
         for d in deals:
             self.send_deal(chat_id, d)
 
+    def handle_my_chat_member(self, mcm: Dict):
+        """Gestisce l'evento in cui il bot viene aggiunto o promosso ad amministratore in un canale."""
+        chat = mcm.get("chat", {})
+        new_status = (mcm.get("new_chat_member") or {}).get("status")
+        if chat.get("type") == "channel" and new_status == "administrator":
+            channel_id = chat.get("id")
+            title = chat.get("title", "Canale")
+            username = chat.get("username")
+            handle = f"@{username}" if username else str(channel_id)
+            print(f"🎉 RILEVATO NUOVO CANALE COLLEGATO: {title} ({handle})!")
+            update_env_channel(handle)
+
+            welcome = (
+                f"🚀 <b>RADAR OFFERTISSIMESCONTI COLLEGATO CON SUCCESSO!</b>\n\n"
+                f"Canale: <b>{title}</b> ({handle})\n\n"
+                f"Questo canale è ora configurato e operativo per ricevere automaticamente "
+                f"le migliori offerte Amazon reali e minimi storici ogni 10 minuti!\n\n"
+                f"Tutti i link includono deeplinking e tracciamento affiliato verificato."
+            )
+            self.send_message(channel_id, welcome)
+
     def run_polling(self):
         info = self.test_connection()
         if not info.get("ok"):
@@ -718,6 +776,8 @@ class OffertissimeScontiTelegramBot:
                             self.handle_message(u["message"])
                         elif "callback_query" in u:
                             self.handle_callback(u["callback_query"])
+                        elif "my_chat_member" in u:
+                            self.handle_my_chat_member(u["my_chat_member"])
                     except Exception as handler_err:
                         print(f"❌ Errore nella gestione dell'update {u.get('update_id')}: {handler_err}")
                 time.sleep(1)

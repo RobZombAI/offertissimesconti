@@ -303,6 +303,9 @@ class TelegramChannelBroadcaster:
         while True:
             try:
                 loop_count += 1
+                env_curr = load_env()
+                if env_curr.get("TELEGRAM_CHANNEL_ID"):
+                    self.channel_id = env_curr["TELEGRAM_CHANNEL_ID"]
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 print(f"\n[{now_str}] 🔄 Ciclo #{loop_count}: Selezione offerta per il canale...")
 
