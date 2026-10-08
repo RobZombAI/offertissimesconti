@@ -21,15 +21,14 @@ let activeSort = 'drop';
 const OFFICIAL_ASSOCIATE_TAG = 'offertissimes-21';
 
 function formatAffiliateUrl(url, asin) {
-  if (!url || typeof url !== 'string') {
-    return `https://www.amazon.it/dp/${asin || ''}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
-  }
-  if (url.includes('tag=' + OFFICIAL_ASSOCIATE_TAG) && url.includes('linkCode=ll2')) {
+  if (url && typeof url === 'string' && url.includes('tag=' + OFFICIAL_ASSOCIATE_TAG) && url.includes('linkCode=ll2')) {
     return url;
   }
-  const match = url.match(/(?:\/dp\/|\/gp\/product\/)([A-Z0-9]{10})/i);
+  const match = (url || '').match(/(?:\/dp\/|\/gp\/product\/)([A-Z0-9]{10})/i);
   const targetAsin = match ? match[1] : (asin || '');
-  return `https://www.amazon.it/dp/${targetAsin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
+  const linkIdMatch = (url || '').match(/linkId=([a-f0-9]{32})/i);
+  const linkIdParam = linkIdMatch ? `&linkId=${linkIdMatch[1]}` : '';
+  return `https://www.amazon.it/dp/${targetAsin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}${linkIdParam}&ref_=as_li_ss_tl`;
 }
 
 function showToast(message, icon = '⚡') {

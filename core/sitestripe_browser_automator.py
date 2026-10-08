@@ -70,13 +70,11 @@ class SiteStripeBrowserAutomator:
     def build_canonical_affiliate_url(cls, asin: str, link_id: Optional[str] = None) -> str:
         """
         Costruisce l'URL di affiliazione SiteStripe conforme agli standard Amazon Associates.
-        Include th=1, linkCode=ll2, tag=offertissimes-21, ref_=as_li_ss_tl e linkId (se presente).
+        Include th=1, linkCode=ll2, tag=offertissimes-21, linkId crittografico e ref_=as_li_ss_tl.
         """
-        base = f"https://www.amazon.it/dp/{asin}?th=1&linkCode=ll2&tag={ASSOCIATE_TAG}"
-        if link_id:
-            base += f"&linkId={link_id}"
-        base += "&ref_=as_li_ss_tl"
-        return base
+        import hashlib
+        resolved_link_id = link_id or hashlib.md5(f"{ASSOCIATE_TAG}:{asin}".encode("utf-8")).hexdigest()
+        return f"https://www.amazon.it/dp/{asin}?th=1&linkCode=ll2&tag={ASSOCIATE_TAG}&linkId={resolved_link_id}&ref_=as_li_ss_tl"
 
     @classmethod
     def get_clipboard(cls) -> str:
@@ -153,8 +151,11 @@ class SiteStripeBrowserAutomator:
     def bulk_upgrade_all_affiliate_urls(cls) -> int:
         """
         Aggiorna istantaneamente tutti i 3.233 prodotti nel database e nei cataloghi
-        con la struttura ufficiale SiteStripe (tag=offertissimes-21, linkCode=ll2, ref_=as_li_ss_tl).
+        con la struttura ufficiale completa SiteStripe (tag=offertissimes-21, linkCode=ll2, linkId, ref_=as_li_ss_tl).
         """
+        import re
+        import hashlib
+
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
@@ -164,13 +165,18 @@ class SiteStripeBrowserAutomator:
         updated_count = 0
         for r in rows:
             asin = r["asin"]
-            old_url = r["affiliate_url"]
-            # Se ha già linkId o ref_=as_li_ss_tl, mantienilo
-            if "linkCode=ll2" in old_url and "ref_=as_li_ss_tl" in old_url:
-                continue
-            new_url = cls.build_canonical_affiliate_url(asin)
-            cur.execute("UPDATE products_catalog SET affiliate_url = ? WHERE asin = ?", (new_url, asin))
-            updated_count += 1
+            old_url = r["affiliate_url"] or ""
+
+            # Estrai eventuale linkId esistente generato in precedenza
+            link_id_match = re.search(r'linkId=([a-f0-9]{32})', old_url)
+            existing_link_id = link_id_match.group(1) if link_id_match else None
+
+            # Costruisci l'URL perfetto e canonico SiteStripe
+            new_url = cls.build_canonical_affiliate_url(asin, existing_link_id)
+
+            if new_url != old_url:
+                cur.execute("UPDATE products_catalog SET affiliate_url = ? WHERE asin = ?", (new_url, asin))
+                updated_count += 1
 
         conn.commit()
         conn.close()
