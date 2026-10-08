@@ -235,7 +235,7 @@ class TelegramChannelBroadcaster:
 
         caption, keyboard = self.format_channel_post(deal)
         photo_url = (deal.get("image_url") or "").strip()
-        if not photo_url or "images-eu.ssl-images-amazon.com" in photo_url or photo_url.endswith(".gif"):
+        if not photo_url or photo_url.endswith(".gif"):
             photo_url = "https://robzombai.github.io/offertissimesconti/images/logo.jpg"
 
         # Invia con foto se disponibile
