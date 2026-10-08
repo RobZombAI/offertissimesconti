@@ -495,13 +495,13 @@ function renderProducts(products, reset) {
         </td>
         <td>
           <div class="table-actions">
-            <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
-              Acquista ↗
+            <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy" title="Acquista al minimo su Amazon.it">
+              🛒 Acquista ↗
             </a>
-            <button class="btn btn-outline btn-chart-open" data-sku="${p.sku_id}" title="Visualizza grafico storico prezzi reale">
+            <button type="button" class="btn btn-chart-open" data-sku="${p.sku_id}" title="Visualizza grafico storico prezzi reale (1 Anno)">
               📊 Grafico
             </button>
-            <button class="btn btn-track" data-sku="${p.sku_id}" data-name="${p.title}" data-price="${p.current_price}" data-atl="${p.all_time_low}">
+            <button type="button" class="btn btn-track" data-sku="${p.sku_id}" data-name="${p.title}" data-price="${p.current_price}" data-atl="${p.all_time_low}" title="Imposta notifica allarme prezzo">
               🔔 Allerta
             </button>
           </div>
@@ -573,15 +573,17 @@ function renderProducts(products, reset) {
       <div class="price-avg">Media ultimi 30gg: <strong>€${p.avg_price_30d.toFixed(2)}</strong></div>
 
       <div class="card-actions">
-        <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy">
-          Acquista su Amazon ↗
+        <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-card-primary" title="Acquista al prezzo minimo verificato su Amazon.it">
+          🛒 Acquista su Amazon ↗
         </a>
-        <button class="btn btn-outline btn-chart-open" data-sku="${p.sku_id}" title="Apri analisi e grafico storico">
-          📊 Grafico
-        </button>
-        <button class="btn btn-track" data-sku="${p.sku_id}" data-name="${p.title}" data-price="${p.current_price}" data-atl="${p.all_time_low}">
-          🔔 Traccia
-        </button>
+        <div class="card-secondary-actions">
+          <button type="button" class="btn btn-outline btn-chart-open" data-sku="${p.sku_id}" title="Apri andamento storico prezzi completo (1 Anno)">
+            📊 Grafico
+          </button>
+          <button type="button" class="btn btn-track" data-sku="${p.sku_id}" data-name="${p.title}" data-price="${p.current_price}" data-atl="${p.all_time_low}" title="Imposta notifica allarme prezzo">
+            🔔 Allerta
+          </button>
+        </div>
       </div>
     `;
 
@@ -852,12 +854,14 @@ function openPriceChartModal(skuId, initialRange = '1y') {
       <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn-chart-modal-buy">
         🛒 Acquista al Minimo su Amazon ↗
       </a>
-      <button class="btn-chart-modal-track" id="btnChartTrackModal">
-        🔔 Imposta Allarme Prezzo
-      </button>
-      <button class="btn-chart-modal-track" id="btnChartCopyLink" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe; font-weight:700;" title="Copia link affiliato verificato">
-        📋 Copia Link
-      </button>
+      <div class="chart-modal-sub-actions">
+        <button type="button" class="btn-chart-modal-track" id="btnChartTrackModal">
+          🔔 Imposta Allarme
+        </button>
+        <button type="button" class="btn-chart-modal-track" id="btnChartCopyLink" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe; font-weight:700;" title="Copia link affiliato verificato">
+          📋 Copia Link
+        </button>
+      </div>
     </div>
   `;
 
