@@ -66,7 +66,9 @@
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
-        <input type="text" id="searchInput" placeholder="Cerca tra 3.000 prodotti (es. capsule caffè, COSRX, creatina, Pampers, cavo Anker...)" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Cerca tra 3.200+ prodotti reali (es. capsule caffè, COSRX, Pampers, Anker...)" autocomplete="off">
+        <kbd class="search-kbd" title="Scorciatoia tastiera per cercare">/</kbd>
+        <button id="clearSearchBtn" class="clear-search-btn hidden" aria-label="Cancella ricerca" title="Cancella ricerca">&times;</button>
         <button id="searchBtn" class="btn btn-primary">Cerca Sconti</button>
       </div>
 
@@ -377,6 +379,12 @@
 
         <form id="alertForm">
           <label for="targetPriceInput">Avvisami quando scende sotto questo prezzo (€):</label>
+          <div class="quick-price-chips" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+            <button type="button" class="btn-quick-price" data-pct="0.90" style="padding:5px 12px; font-size:0.8rem; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; cursor:pointer;">-10%</button>
+            <button type="button" class="btn-quick-price" data-pct="0.85" style="padding:5px 12px; font-size:0.8rem; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; cursor:pointer;">-15%</button>
+            <button type="button" class="btn-quick-price" data-pct="0.80" style="padding:5px 12px; font-size:0.8rem; border-radius:8px; border:1px solid #cbd5e1; background:#f8fafc; font-weight:700; cursor:pointer;">-20%</button>
+            <button type="button" class="btn-quick-price-atl" style="padding:5px 12px; font-size:0.8rem; border-radius:8px; border:1px solid #a7f3d0; background:#ecfdf5; color:#047857; font-weight:700; cursor:pointer;">🏆 Al Minimo Storico</button>
+          </div>
           <input type="number" id="targetPriceInput" step="0.10" min="1" required>
 
           <label for="contactInput">Tuo Username Telegram o Email per la notifica:</label>
@@ -417,6 +425,16 @@
       </div>
     </div>
   </dialog>
+
+  <!-- Floating Scroll To Top Button -->
+  <button id="scrollTopBtn" class="scroll-top-btn" aria-label="Torna all'inizio della pagina" title="Torna in cima">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 15l-6-6-6 6"/>
+    </svg>
+  </button>
+
+  <!-- Live Toast Feedback Notification Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
   <script src="app.js"></script>
 </body>
