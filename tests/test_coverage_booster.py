@@ -382,5 +382,30 @@ class TestCoverageBooster(unittest.TestCase):
             self.assertEqual(notified, 1)
             monitor.send_telegram_photo.assert_called_once()
 
+    def test_tbr_send_wishlist_non_empty(self):
+        bot = OffertissimeScontiTelegramBot("fake")
+        bot.send_message = MagicMock()
+        mock_wish = [
+            {
+                "title": "Prod 1",
+                "current_price": 10.0,
+                "target_price": 12.0,
+                "keepa_drop_percent": 20.0,
+                "all_time_low": 9.0,
+                "affiliate_url": "https://amazon.it"
+            },
+            {
+                "title": "Prod 2",
+                "current_price": 25.0,
+                "target_price": 20.0,
+                "keepa_drop_percent": 10.0,
+                "all_time_low": 18.0,
+                "affiliate_url": "https://amazon.it"
+            }
+        ]
+        bot.get_user_wishlist = MagicMock(return_value=mock_wish)
+        bot.send_wishlist_message(123)
+        self.assertGreater(bot.send_message.call_count, 1)
+
 if __name__ == "__main__":
     unittest.main()
