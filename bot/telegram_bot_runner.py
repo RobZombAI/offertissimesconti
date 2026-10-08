@@ -378,7 +378,7 @@ class OffertissimeScontiTelegramBot:
             chart_lines.append(f"• <b>{label:10}</b> €{val:6.2f}  <code>{bar}</code>  <i>{note}</i>")
 
         chart_block = "\n".join(chart_lines)
-        site_url = f"https://robzomb.github.io/modest-hawking/?sku={p['sku_id']}"
+        site_url = f"https://robzombai.github.io/offertissimesconti/?sku={p['sku_id']}"
 
         title_short = p['title'][:70] + '...' if len(p['title']) > 70 else p['title']
         msg = (
