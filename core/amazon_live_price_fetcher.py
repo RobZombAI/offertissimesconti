@@ -165,7 +165,7 @@ class AmazonLivePriceFetcher:
                     "current_price": current_price,
                     "list_price": list_price,
                     "image_url": img_url,
-                    "affiliate_url": f"https://www.amazon.it/dp/{asin}?tag=offertissimes-21",
+                    "affiliate_url": f"https://www.amazon.it/dp/{asin}?th=1&linkCode=ll2&tag=offertissimes-21&ref_=as_li_ss_tl",
                     "in_stock": in_stock,
                     "last_updated": time.strftime("%Y-%m-%d %H:%M:%S")
                 }

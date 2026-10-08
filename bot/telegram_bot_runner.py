@@ -502,7 +502,7 @@ class OffertissimeScontiTelegramBot:
         return None
 
     def handle_asin_lookup(self, chat_id: int, asin: str):
-        affiliate_url = f"https://www.amazon.it/dp/{asin}?tag=offertissimes-21"
+        affiliate_url = f"https://www.amazon.it/dp/{asin}?th=1&linkCode=ll2&tag=offertissimes-21&ref_=as_li_ss_tl"
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
