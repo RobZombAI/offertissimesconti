@@ -3,12 +3,12 @@
  * Gestione dinamica catalogo, filtri Radar Prezzi, grafici SVG sparkline e alert modal.
  */
 
-const CLOUDFLARE_BACKEND = 'https://voices-limousines-showing-classes.trycloudflare.com';
-const API_BASE = window.location.origin.includes('github.io') 
-  ? CLOUDFLARE_BACKEND 
-  : (window.location.origin.includes('http') ? window.location.origin : 'http://localhost:8000');
-let currentProducts = [];
+const API_BASE = (window.location.origin.includes('localhost') || window.location.origin.includes('127.0.0.1'))
+  ? window.location.origin
+  : '';
+let rawCatalog = [];
 let allCategories = [];
+let currentProducts = [];
 let activeFilter = 'all'; // 'all', 'atl', 'cyclical', 'viral'
 let activeCategory = '';
 let minDiscount = 0;
@@ -98,10 +98,10 @@ function setupEventListeners() {
     }
   });
 
-  // PostTap Export Button (Dynamic backend on GitHub Pages)
+  // PostTap Export Button (Direct link on GitHub Pages and local)
   const exportBtn = document.getElementById('btnExportPosttap');
-  if (exportBtn && window.location.origin.includes('github.io')) {
-    exportBtn.href = `${CLOUDFLARE_BACKEND}/api/export/posttap.csv`;
+  if (exportBtn) {
+    exportBtn.href = 'offertissimesconti_posttap_export.csv';
   }
 
   // Search
@@ -159,19 +159,40 @@ function setActiveTab(filter) {
 }
 
 async function loadCategories() {
+  if (allCategories.length > 0) return;
+
+  // 1. Prova endpoint /api/categories se server API locale attivo
+  if (API_BASE) {
+    try {
+      const res = await fetch(`${API_BASE}/api/categories`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.categories && data.categories.length > 0) {
+          allCategories = data.categories;
+          populateCategoryUI(allCategories);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("API locale /api/categories non raggiungibile, utilizzo categories.json.");
+    }
+  }
+
+  // 2. Fallback statico autonomo per GitHub Pages / Produzione
   try {
-    const res = await fetch(`${API_BASE}/api/categories`);
+    const res = await fetch('categories.json');
     const data = await res.json();
     if (data.success && data.categories) {
       allCategories = data.categories;
       populateCategoryUI(allCategories);
     }
   } catch (err) {
-    console.warn("Impossibile caricare categorie dall'API, uso fallback statico.");
+    console.error("Impossibile caricare categorie:", err);
   }
 }
 
 function populateCategoryUI(categories) {
+  categorySelect.innerHTML = '<option value="">Tutte le Categorie (15)</option>';
   // Dropdown
   categories.forEach(cat => {
     const opt = document.createElement('option');
@@ -203,6 +224,39 @@ function updateChipSelection(catId) {
   chips.forEach(c => c.classList.remove('active'));
 }
 
+async function fetchCatalogData() {
+  if (rawCatalog.length > 0) return rawCatalog;
+
+  // 1. Prova endpoint /api/products se server API locale attivo
+  if (API_BASE) {
+    try {
+      const res = await fetch(`${API_BASE}/api/products?limit=5000`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.products && data.products.length > 0) {
+          rawCatalog = data.products;
+          return rawCatalog;
+        }
+      }
+    } catch (e) {
+      console.warn("API locale /api/products non disponibile, carico catalogo statico...");
+    }
+  }
+
+  // 2. Fallback statico autonomo per GitHub Pages / Produzione
+  try {
+    const res = await fetch('catalog.json');
+    const data = await res.json();
+    if (data.success && data.products) {
+      rawCatalog = data.products;
+      return rawCatalog;
+    }
+  } catch (err) {
+    console.error("Impossibile caricare catalog.json:", err);
+  }
+  return [];
+}
+
 async function loadProducts(reset = true) {
   if (reset) {
     currentOffset = 0;
@@ -210,46 +264,63 @@ async function loadProducts(reset = true) {
     resultsCount.textContent = 'Ricerca sconti in corso...';
   }
 
-  // Costruisci parametri query
-  const params = new URLSearchParams({
-    limit: currentLimit,
-    offset: currentOffset
+  const catalog = await fetchCatalogData();
+  if (!catalog || catalog.length === 0) {
+    resultsCount.textContent = 'Caricamento catalogo in corso. Verifica la connessione di rete.';
+    return;
+  }
+
+  // Aggiorna contatore statistico hero se presente
+  const statEl = document.getElementById('statProducts');
+  if (statEl) statEl.textContent = catalog.length.toLocaleString('it-IT');
+
+  // Filtra prodotti in memoria (istantaneo a 60fps)
+  let filtered = catalog.filter(p => {
+    if (activeCategory && p.macro_category_id !== activeCategory) {
+      return false;
+    }
+    if (minDiscount > 0 && (p.keepa_drop_percent || 0) < minDiscount) {
+      return false;
+    }
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchTitle = (p.title || '').toLowerCase().includes(q);
+      const matchBrand = (p.brand || '').toLowerCase().includes(q);
+      const matchSub = (p.sub_category_name || '').toLowerCase().includes(q);
+      const matchAsin = (p.asin || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchBrand && !matchSub && !matchAsin) {
+        return false;
+      }
+    }
+    if (activeFilter === 'atl') {
+      if (p.current_price > p.all_time_low * 1.02) return false;
+    } else if (activeFilter === 'cyclical') {
+      if (!p.is_cyclical) return false;
+    } else if (activeFilter === 'viral') {
+      if ((p.virality_score || 0) < 85) return false;
+    }
+    return true;
   });
 
-  if (activeCategory) params.append('category', activeCategory);
-  if (minDiscount > 0) params.append('min_drop', minDiscount);
-  if (searchQuery) params.append('search', searchQuery);
-
-  if (activeFilter === 'cyclical') params.append('cyclical', '1');
-  if (activeFilter === 'viral') params.append('min_virality', '90');
-  if (activeSort) params.append('sort', activeSort);
-
-  try {
-    const res = await fetch(`${API_BASE}/api/products?${params.toString()}`);
-    const data = await res.json();
-
-    if (data.success && data.products) {
-      let prods = data.products;
-
-      // Filtro locale per Minimi Storici
-      if (activeFilter === 'atl') {
-        prods = prods.filter(p => p.current_price <= p.all_time_low * 1.02);
-      }
-
-      if (reset) {
-        currentProducts = prods;
-      } else {
-        currentProducts.push(...prods);
-      }
-
-      renderProducts(prods, reset);
-      resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${data.total_matched} sconti trovati)`;
-      loadMoreBtn.style.display = (currentProducts.length >= data.total_matched) ? 'none' : 'inline-flex';
-    }
-  } catch (err) {
-    console.error('Errore nel caricamento prodotti:', err);
-    resultsCount.textContent = 'Connessione al database in corso. Assicurati che il server API sia attivo.';
+  // Ordinamento
+  if (activeSort === 'price_asc') {
+    filtered.sort((a, b) => a.current_price - b.current_price);
+  } else if (activeSort === 'price_desc') {
+    filtered.sort((a, b) => b.current_price - a.current_price);
+  } else if (activeSort === 'atl') {
+    filtered.sort((a, b) => (a.current_price / a.all_time_low) - (b.current_price / b.all_time_low));
+  } else if (activeSort === 'cycle') {
+    filtered.sort((a, b) => (a.cycle_days || 999) - (b.cycle_days || 999));
+  } else {
+    filtered.sort((a, b) => (b.keepa_drop_percent || 0) - (a.keepa_drop_percent || 0));
   }
+
+  const sliceEnd = currentOffset + currentLimit;
+  currentProducts = filtered.slice(0, sliceEnd);
+
+  renderProducts(currentProducts, true);
+  resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${filtered.length} sconti trovati)`;
+  loadMoreBtn.style.display = (currentProducts.length >= filtered.length) ? 'none' : 'inline-flex';
 }
 
 function renderProducts(products, reset) {
