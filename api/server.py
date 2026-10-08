@@ -126,9 +126,9 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                     params.append(int(query["min_virality"][0]))
 
                 if "search" in query and query["search"][0]:
-                    conditions.append("(title LIKE ? OR brand LIKE ? OR sub_category_name LIKE ?)")
+                    conditions.append("(title LIKE ? OR brand LIKE ? OR sub_category_name LIKE ? OR asin LIKE ? OR sku_id LIKE ?)")
                     term = f"%{query['search'][0]}%"
-                    params.extend([term, term, term])
+                    params.extend([term, term, term, term, term])
 
                 limit = int(query.get("limit", [24])[0])
                 offset = int(query.get("offset", [0])[0])
@@ -219,6 +219,21 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                 from core.amazon_live_price_fetcher import AmazonLivePriceFetcher
                 data = AmazonLivePriceFetcher.fetch_asin(asin)
                 self._send_json(200, data)
+
+            elif path == "/api/search_amazon":
+                query_str = query.get("q", [""])[0]
+                if not query_str:
+                    self._send_json(400, {"success": False, "error": "Parametro 'q' obbligatorio"})
+                    return
+                from core.amazon_live_price_fetcher import AmazonLivePriceFetcher
+                results = AmazonLivePriceFetcher.search_amazon(query_str, limit=8)
+                self._send_json(200, {
+                    "success": True,
+                    "query": query_str,
+                    "count": len(results),
+                    "results": results,
+                    "amazon_affiliate_search_url": f"https://www.amazon.it/s?k={urllib.parse.quote_plus(query_str)}&tag=offertissimes-21"
+                })
 
             elif path == "/api/health":
                 self._send_json(200, {"status": "healthy", "brand": "OFFERTISSIMESCONTI", "version": "2.0"})

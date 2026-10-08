@@ -575,11 +575,34 @@ class OffertissimeScontiTelegramBot:
 
             results = self.search_products(query, limit=3)
             if not results:
-                self.send_message(chat_id, f"🔍 Nessun prodotto trovato per '<b>{query}</b>'. Prova con un termine più generico.")
+                asin = self.extract_asin(query)
+                if asin:
+                    self.handle_asin_lookup(chat_id, asin)
+                else:
+                    amazon_url = f"https://www.amazon.it/s?k={requests.utils.quote(query)}&tag=offertissimes-21"
+                    kb = {
+                        "inline_keyboard": [
+                            [{"text": f"🛒 Cerca '{query[:25]}' su Amazon.it ↗", "url": amazon_url}],
+                            [{"text": "🏷 Solo Offerte (-20%+) ↗", "url": f"{amazon_url}&pct-off=20-"}]
+                        ]
+                    }
+                    self.send_message(
+                        chat_id,
+                        f"🔍 Nessun prodotto trovato per '<b>{query}</b>' tra i minimi storici monitorati.\n\n"
+                        f"👉 Puoi comunque cercare <b>qualsiasi prodotto</b> direttamente su Amazon.it con il nostro link affiliato:",
+                        reply_markup=kb
+                    )
             else:
                 self.send_message(chat_id, f"🔎 Ecco i risultati migliori per '<b>{query}</b>':")
                 for p in results:
                     self.send_deal(chat_id, p)
+                amazon_url = f"https://www.amazon.it/s?k={requests.utils.quote(query)}&tag=offertissimes-21"
+                more_kb = {
+                    "inline_keyboard": [
+                        [{"text": f"🛒 Cerca altri risultati per '{query[:20]}' su Amazon ↗", "url": amazon_url}]
+                    ]
+                }
+                self.send_message(chat_id, "💡 Vuoi vedere altri articoli su tutto il catalogo Amazon?", reply_markup=more_kb)
 
         elif text.startswith("/grafico") or text.startswith("/storico") or text.startswith("/chart"):
             query = text.replace("/grafico", "").replace("/storico", "").replace("/chart", "").strip()
@@ -632,8 +655,27 @@ class OffertissimeScontiTelegramBot:
                 self.send_message(chat_id, f"🔎 Ho cercato '<b>{text}</b>' per te nel catalogo:")
                 for p in results:
                     self.send_deal(chat_id, p)
+                amazon_url = f"https://www.amazon.it/s?k={requests.utils.quote(text)}&tag=offertissimes-21"
+                more_kb = {
+                    "inline_keyboard": [
+                        [{"text": f"🛒 Cerca altri risultati su Amazon.it ↗", "url": amazon_url}]
+                    ]
+                }
+                self.send_message(chat_id, "💡 Vuoi cercare altri articoli simili su Amazon?", reply_markup=more_kb)
             else:
-                self.send_message(chat_id, f"Non ho trovato risultati per '<b>{text}</b>'. Prova con comandi come <code>/deals</code> o <code>/minimi</code>.", reply_markup=self.get_main_menu_keyboard())
+                amazon_url = f"https://www.amazon.it/s?k={requests.utils.quote(text)}&tag=offertissimes-21"
+                kb = {
+                    "inline_keyboard": [
+                        [{"text": f"🛒 Cerca '{text[:25]}' su Amazon.it ↗", "url": amazon_url}],
+                        [{"text": "🏷 Solo Offerte (-20%+) ↗", "url": f"{amazon_url}&pct-off=20-"}]
+                    ]
+                }
+                self.send_message(
+                    chat_id,
+                    f"Non ho trovato risultati per '<b>{text}</b>' tra i prodotti salvati.\n\n"
+                    f"👉 Puoi comunque cercare <b>qualsiasi prodotto</b> direttamente su Amazon.it:",
+                    reply_markup=kb
+                )
 
     def extract_asin(self, text: str) -> Optional[str]:
         clean = text.strip()

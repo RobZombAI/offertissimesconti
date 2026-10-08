@@ -101,6 +101,40 @@ class TestApiServerExtended(unittest.TestCase):
                 data = res.read()
                 self.assertGreater(len(data), 0)
 
+    def test_search_amazon_missing_q(self):
+        url = f"{self.base_url}/api/search_amazon"
+        try:
+            urllib.request.urlopen(url)
+            self.fail("Should have returned 400")
+        except urllib.error.HTTPError as e:
+            self.assertEqual(e.code, 400)
+
+    def test_search_amazon_endpoint(self):
+        url = f"{self.base_url}/api/search_amazon?q=sony"
+        with urllib.request.urlopen(url) as res:
+            self.assertEqual(res.status, 200)
+            data = json.loads(res.read().decode("utf-8"))
+            self.assertTrue(data["success"])
+            self.assertEqual(data["query"], "sony")
+            self.assertIn("amazon_affiliate_search_url", data)
+            self.assertIn("tag=offertissimes-21", data["amazon_affiliate_search_url"])
+
+    def test_products_search_by_asin(self):
+        url = f"{self.base_url}/api/products?search=B0&limit=2"
+        with urllib.request.urlopen(url) as res:
+            self.assertEqual(res.status, 200)
+            data = json.loads(res.read().decode("utf-8"))
+            self.assertTrue(data["success"])
+            self.assertGreater(data["total_matched"], 0)
+
+    def test_search_amazon_fetcher_method(self):
+        from core.amazon_live_price_fetcher import AmazonLivePriceFetcher
+        results = AmazonLivePriceFetcher.search_amazon("B0CX23VFPW", limit=1)
+        self.assertIsInstance(results, list)
+        if results:
+            self.assertEqual(results[0]["asin"], "B0CX23VFPW")
+            self.assertIn("offertissimes-21", results[0]["affiliate_url"])
+
     def test_run_server_mock(self):
         with patch("api.server.HTTPServer") as mock_http:
             mock_instance = MagicMock()
@@ -114,3 +148,4 @@ class TestApiServerExtended(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

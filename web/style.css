@@ -2185,3 +2185,114 @@ button, input, select {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Universal Amazon Search Banner & Fallback Hub
+   ========================================================================== */
+.universal-search-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.universal-search-banner.hidden {
+  display: none !important;
+}
+
+.search-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.92rem;
+  color: #1e293b;
+}
+
+.btn-banner-amazon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary);
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 0.84rem;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+.btn-banner-amazon:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.universal-search-card {
+  grid-column: 1 / -1;
+  background: #ffffff;
+  border: 2px dashed #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 44px 28px;
+  text-align: center;
+  max-width: 760px;
+  margin: 20px auto;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.universal-search-badge {
+  display: inline-block;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 800;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+
+.universal-search-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.universal-search-desc {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 580px;
+  margin: 0 auto 24px auto;
+  line-height: 1.6;
+}
+
+.universal-search-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.universal-search-actions .btn {
+  justify-content: center;
+  font-size: 0.95rem;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+}
+
+.universal-search-footer {
+  margin-top: 24px;
+  font-size: 0.8rem;
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 14px;
+}
+
