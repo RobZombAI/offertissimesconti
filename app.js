@@ -31,26 +31,8 @@ function formatAffiliateUrl(url, asin) {
   return `https://www.amazon.it/dp/${targetAsin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}${linkIdParam}&ref_=as_li_ss_tl`;
 }
 
-const CATEGORY_FALLBACK_IMAGES = {
-  beauty_personal_care: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500',
-  health_supplements: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=500',
-  grocery_coffee: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500',
-  cleaning_household: 'https://images.unsplash.com/photo-1583947215259-38e31be8751f?w=500',
-  baby_care: 'https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=500',
-  pet_supplies: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=500',
-  electronics_gadgets: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=500',
-  home_kitchen: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=500',
-  diy_tools_garden: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=500',
-  automotive: 'https://images.unsplash.com/photo-1489824904134-891ab64532f1?w=500',
-  sports_fitness_gear: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500',
-  office_stationery: 'https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=500',
-  apparel_basics: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500',
-  toys_hobbies: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500',
-  books_planners: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=500'
-};
-
 function getCategoryFallbackImage(catId) {
-  return CATEGORY_FALLBACK_IMAGES[catId] || 'images/logo.jpg';
+  return 'images/logo.jpg';
 }
 
 function showToast(message, icon = '⚡') {

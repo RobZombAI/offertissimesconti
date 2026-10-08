@@ -16,7 +16,7 @@
     {
       "macro_category_id": "electronics_gadgets",
       "macro_category_name": "Elettronica, Accessori e Gadget Smart",
-      "total_skus": 423,
+      "total_skus": 424,
       "avg_drop": 26.0
     },
     {
@@ -50,46 +50,46 @@
       "avg_drop": 25.9
     },
     {
-      "macro_category_id": "automotive",
-      "macro_category_name": "Auto e Moto (Accessori & Manutenzione)",
-      "total_skus": 88,
-      "avg_drop": 29.8
-    },
-    {
-      "macro_category_id": "diy_tools_garden",
-      "macro_category_name": "Fai da Te, Bricolage e Giardinaggio",
-      "total_skus": 84,
-      "avg_drop": 29.5
-    },
-    {
       "macro_category_id": "books_planners",
       "macro_category_name": "Libri, Agende e Self-Help",
-      "total_skus": 49,
-      "avg_drop": 26.7
-    },
-    {
-      "macro_category_id": "toys_hobbies",
-      "macro_category_name": "Giochi, Hobbies e Tempo Libero",
-      "total_skus": 39,
-      "avg_drop": 27.6
+      "total_skus": 30,
+      "avg_drop": 25.9
     },
     {
       "macro_category_id": "office_stationery",
       "macro_category_name": "Cancelleria, Ufficio e Spedizioni",
-      "total_skus": 33,
-      "avg_drop": 26.3
+      "total_skus": 30,
+      "avg_drop": 25.9
     },
     {
-      "macro_category_id": "apparel_basics",
-      "macro_category_name": "Abbigliamento Base e Calzetteria",
-      "total_skus": 28,
-      "avg_drop": 28.5
+      "macro_category_id": "toys_hobbies",
+      "macro_category_name": "Giochi, Hobbies e Tempo Libero",
+      "total_skus": 30,
+      "avg_drop": 25.9
     },
     {
       "macro_category_id": "cleaning_household",
       "macro_category_name": "Cura della Casa e Pulizia",
       "total_skus": 4,
       "avg_drop": 3.3
+    },
+    {
+      "macro_category_id": "apparel_basics",
+      "macro_category_name": "Abbigliamento Base e Calzetteria",
+      "total_skus": 2,
+      "avg_drop": 16.0
+    },
+    {
+      "macro_category_id": "diy_tools_garden",
+      "macro_category_name": "Fai da Te, Bricolage e Giardinaggio",
+      "total_skus": 2,
+      "avg_drop": 8.2
+    },
+    {
+      "macro_category_id": "automotive",
+      "macro_category_name": "Auto e Moto (Accessori & Manutenzione)",
+      "total_skus": 1,
+      "avg_drop": 33.3
     }
   ],
   "total": 15
