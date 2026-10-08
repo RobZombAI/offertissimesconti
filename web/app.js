@@ -32,6 +32,20 @@ function formatAffiliateUrl(url, asin) {
   return `https://www.amazon.it/dp/${targetAsin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
 }
 
+function showToast(message, icon = '⚡') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<span style="font-size:1.15rem;">${icon}</span> <span>${message}</span>`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add('toast-show'));
+  setTimeout(() => {
+    toast.classList.remove('toast-show');
+    setTimeout(() => toast.remove(), 300);
+  }, 2600);
+}
+
 // DOM Elements
 const productsGrid = document.getElementById('productsGrid');
 const resultsCount = document.getElementById('resultsCount');
@@ -128,7 +142,37 @@ function setupEventListeners() {
     exportBtn.href = 'offertissimesconti_posttap_export.csv';
   }
 
-  // Search
+  // Search Keyboard Shortcut: / or Cmd+K / Ctrl+K
+  document.addEventListener('keydown', (e) => {
+    if ((e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) && 
+        document.activeElement !== searchInput && 
+        !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) {
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+    }
+  });
+
+  // Search Clear Button
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
+  searchInput.addEventListener('input', () => {
+    if (searchInput.value.trim().length > 0) {
+      clearSearchBtn?.classList.remove('hidden');
+    } else {
+      clearSearchBtn?.classList.add('hidden');
+    }
+  });
+
+  clearSearchBtn?.addEventListener('click', () => {
+    searchInput.value = '';
+    searchQuery = '';
+    clearSearchBtn.classList.add('hidden');
+    loadProducts(true);
+    searchInput.focus();
+    showToast('Ricerca azzerata', '🔄');
+  });
+
+  // Search Submit
   searchBtn.addEventListener('click', () => {
     searchQuery = searchInput.value.trim();
     loadProducts(true);
@@ -139,6 +183,20 @@ function setupEventListeners() {
       searchQuery = searchInput.value.trim();
       loadProducts(true);
     }
+  });
+
+  // Floating Scroll to Top Button
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 350) {
+      scrollTopBtn?.classList.add('visible');
+    } else {
+      scrollTopBtn?.classList.remove('visible');
+    }
+  }, { passive: true });
+
+  scrollTopBtn?.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // Load More
@@ -405,10 +463,16 @@ function renderProducts(products, reset) {
 
       tr.innerHTML = `
         <td class="table-img-cell">
-          <img src="${imgUrl}" alt="${p.title}" class="table-product-thumb" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';">
+          <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" title="Apri su Amazon">
+            <img src="${imgUrl}" alt="${p.title}" class="table-product-thumb" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';">
+          </a>
         </td>
         <td class="table-product-cell">
-          <div class="table-product-title">${p.title}</div>
+          <div class="table-product-title">
+            <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" style="color:inherit;" title="${p.title}">
+              ${p.title}
+            </a>
+          </div>
           <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code></div>
           ${atlBadge}
         </td>
@@ -481,12 +545,16 @@ function renderProducts(products, reset) {
       </div>
 
       <!-- Real Product Image Preview -->
-      <div class="card-img-box">
+      <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="card-img-box" title="Apri offerta reale su Amazon.it">
         <img src="${imgUrl}" alt="${p.title}" class="card-product-img" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';">
-      </div>
+      </a>
 
-      <div class="card-category">${p.macro_category_name}</div>
-      <h3 class="card-title">${p.title}</h3>
+      <div class="card-category">${p.macro_category_name} • <strong>${p.brand}</strong></div>
+      <h3 class="card-title">
+        <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" style="color:inherit;" title="${p.title}">
+          ${p.title}
+        </a>
+      </h3>
 
       <!-- Price Trend Sparkline Box (Cliccabile per ingrandire) -->
       <div class="radar-chart-box chart-clickable" data-sku="${p.sku_id}" style="cursor: pointer;" title="Clicca per aprire il grafico dettagliato completo">
@@ -500,6 +568,7 @@ function renderProducts(products, reset) {
       <div class="card-prices">
         <span class="price-current">€${p.current_price.toFixed(2)}</span>
         <span class="price-old">€${p.list_price.toFixed(2)}</span>
+        <span style="font-size:0.75rem; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; margin-left:auto;">Risparmi €${(p.list_price - p.current_price).toFixed(2)}</span>
       </div>
       <div class="price-verified-badge"><span class="verified-dot"></span> Prezzo Reale Amazon.it Sincronizzato</div>
       <div class="price-avg">Media ultimi 30gg: <strong>€${p.avg_price_30d.toFixed(2)}</strong></div>
@@ -868,6 +937,9 @@ function openPriceChartModal(skuId) {
       <button class="btn-chart-modal-track" id="btnChartTrackModal">
         🔔 Imposta Allarme Prezzo
       </button>
+      <button class="btn-chart-modal-track" id="btnChartCopyLink" style="background:#eff6ff; color:#2563eb; border-color:#bfdbfe; font-weight:700;" title="Copia link affiliato verificato">
+        📋 Copia Link
+      </button>
     </div>
   `;
 
@@ -892,6 +964,17 @@ function openPriceChartModal(skuId) {
     openAlertModal(p.sku_id, p.title, p.current_price, p.all_time_low);
   });
 
+  // Copy verified affiliate link inside chart modal
+  modalBody.querySelector('#btnChartCopyLink')?.addEventListener('click', async () => {
+    const link = formatAffiliateUrl(p.affiliate_url, p.asin);
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast("Link affiliato verificato copiato! 📋", "✅");
+    } catch (e) {
+      prompt("Copia link affiliato:", link);
+    }
+  });
+
   chartDialog.showModal();
 }
 
@@ -905,8 +988,25 @@ function openAlertModal(sku, name, price, atl) {
   document.getElementById('modalAtlPrice').textContent = `€${parseFloat(atl).toFixed(2)}`;
   
   // Imposta suggerimento prezzo a -15% dal corrente
-  const suggested = (parseFloat(price) * 0.88).toFixed(2);
-  document.getElementById('targetPriceInput').value = suggested;
+  const inputEl = document.getElementById('targetPriceInput');
+  const suggested = (parseFloat(price) * 0.85).toFixed(2);
+  inputEl.value = suggested;
+
+  // Ergonomic Quick Price Presets
+  document.querySelectorAll('.btn-quick-price').forEach(btn => {
+    btn.onclick = () => {
+      const pct = parseFloat(btn.dataset.pct);
+      inputEl.value = (parseFloat(price) * pct).toFixed(2);
+      showToast(`Prezzo impostato a -${Math.round((1 - pct) * 100)}% (€${inputEl.value})`, '🎯');
+    };
+  });
+  const atlBtn = document.querySelector('.btn-quick-price-atl');
+  if (atlBtn) {
+    atlBtn.onclick = () => {
+      inputEl.value = parseFloat(atl).toFixed(2);
+      showToast(`Prezzo impostato al Minimo Storico (€${inputEl.value})`, '🏆');
+    };
+  }
   
   const feedback = document.getElementById('alertFeedback');
   feedback.className = 'alert-feedback hidden';
