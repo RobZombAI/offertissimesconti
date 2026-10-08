@@ -225,8 +225,9 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                 if not query_str:
                     self._send_json(400, {"success": False, "error": "Parametro 'q' obbligatorio"})
                     return
+                limit = int(query.get("limit", [16])[0])
                 from core.amazon_live_price_fetcher import AmazonLivePriceFetcher
-                results = AmazonLivePriceFetcher.search_amazon(query_str, limit=8)
+                results = AmazonLivePriceFetcher.search_amazon(query_str, limit=limit)
                 self._send_json(200, {
                     "success": True,
                     "query": query_str,

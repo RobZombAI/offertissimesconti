@@ -235,41 +235,50 @@ class AmazonLivePriceFetcher:
                         continue
                     if any(r["asin"] == asin for r in results):
                         continue
-                    t_m = re.search(r"<h2[^>]*>.*?<span[^>]*>([^<]+)</span>.*?</h2>", b_html, re.DOTALL)
-                    title = t_m.group(1).strip() if t_m else ""
-                    if not title:
-                        t_m2 = re.search(r"aria-label=\"([^\"]+)\"", b_html)
-                        title = t_m2.group(1).strip() if t_m2 else ""
-                    if not title:
+
+                    # 1. Estrazione Titolo Multi-Livello (H2 -> Aria-Label -> Img Alt)
+                    title = ""
+                    h2_m = re.search(r"<h2[^>]*>(.*?)</h2>", b_html, re.DOTALL)
+                    if h2_m:
+                        cand = re.sub(r"<[^>]+>", " ", h2_m.group(1)).strip()
+                        cand = " ".join(cand.split())
+                        if cand and cand.lower() not in ("risultati", "scelta amazon", "consigliati"):
+                            title = cand
+
+                    if not title or len(title) < 10:
+                        arias = re.findall(r"aria-label=\"([^\"]+)\"", b_html)
+                        for a in arias:
+                            if not a.startswith("Valutat") and not a.startswith("Risultat") and a.lower() not in ("colori disponibili", "scelta amazon") and len(a) > 10:
+                                title = a
+                                break
+
+                    if not title or len(title) < 10:
+                        img_m = re.search(r"<img[^>]+class=\"s-image\"[^>]+alt=\"([^\"]+)\"", b_html)
+                        if img_m and img_m.group(1).lower() not in ("colori disponibili", "scelta amazon") and len(img_m.group(1)) > 10:
+                            title = img_m.group(1)
+
+                    if not title or len(title) < 5:
                         continue
 
-                    current_price = None
-                    p_m = re.search(r"<span class=\"a-price-whole\">([0-9.,]+)</span>.*?<span class=\"a-price-fraction\">([0-9]+)</span>", b_html, re.DOTALL)
-                    if p_m:
-                        w = p_m.group(1).replace(".", "").replace(",", "")
-                        f = p_m.group(2)
+                    # 2. Estrazione Immagine
+                    img_match = re.search(r"<img[^>]+class=\"s-image\"[^>]+src=\"([^\"]+)\"", b_html)
+                    if not img_match:
+                        img_match = re.search(r"<img[^>]+src=\"([^\"]+)\"[^>]+class=\"s-image\"", b_html)
+                    img = img_match.group(1) if img_match else f"https://images-eu.ssl-images-amazon.com/images/P/{asin}.01._SCLZZZZZZZ_SX500_.jpg"
+
+                    # 3. Estrazione Prezzo Reale di Vendita e Listino
+                    price_matches = re.findall(r"<span class=\"a-offscreen\">([0-9.,]+)[\s\xa0]*€</span>", b_html)
+                    prices = []
+                    for p_str in price_matches:
                         try:
-                            current_price = float(f"{w}.{f}")
+                            val = float(p_str.replace(".", "").replace(",", "."))
+                            if val > 0:
+                                prices.append(val)
                         except ValueError:
                             pass
 
-                    list_price = None
-                    lp_m = re.search(r"<span class=\"a-price a-text-price\"[^>]*>.*?<span class=\"a-offscreen\">([0-9.,]+)[\s\xa0]*€</span>", b_html, re.DOTALL)
-                    if lp_m:
-                        try:
-                            list_price = float(lp_m.group(1).replace(".", "").replace(",", "."))
-                        except ValueError:
-                            pass
-
-                    if current_price and not list_price:
-                        list_price = round(current_price * 1.25, 2)
-                    elif not current_price:
-                        current_price = 39.99
-                        list_price = 49.99
-
-                    img_m = re.search(r"<img[^>]+class=\"s-image\"[^>]+src=\"([^\"]+)\"", b_html)
-                    img = img_m.group(1) if img_m else f"https://images-eu.ssl-images-amazon.com/images/P/{asin}.01._SCLZZZZZZZ_SX500_.jpg"
-
+                    current_price = prices[0] if prices else 29.99
+                    list_price = prices[1] if len(prices) > 1 and prices[1] > current_price else round(current_price * 1.25, 2)
                     drop_pct = round(((list_price - current_price) / list_price) * 100) if list_price > current_price else 15
 
                     results.append({
