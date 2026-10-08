@@ -397,14 +397,15 @@ class OffertissimeScontiTelegramBot:
 
     # --- Dispatcher Comandi & Eventi ---
     def handle_message(self, msg: Dict):
-        chat_id = msg.get("chat", {}).get("id")
-        text = msg.get("text", "").strip()
-        first_name = msg.get("from", {}).get("first_name", "Utente")
+        chat_id = (msg.get("chat") or {}).get("id")
+        text = msg.get("text", "")
+        first_name = (msg.get("from") or {}).get("first_name", "Utente")
+
+        if not chat_id or not text:
+            return
+        text = text.strip()
 
         print(f"📩 Ricevuto messaggio da {first_name} ({chat_id}): '{text}'")
-
-        if not text:
-            return
 
         if text.startswith("/start"):
             welcome_text = (
@@ -538,7 +539,10 @@ class OffertissimeScontiTelegramBot:
     def handle_callback(self, cb: Dict):
         cb_id = cb.get("id")
         data = cb.get("data", "")
-        chat_id = cb.get("message", {}).get("chat", {}).get("id")
+        chat_id = (cb.get("message") or {}).get("chat", {}).get("id")
+
+        if not chat_id or not cb_id:
+            return
 
         print(f"🔘 Callback premuto da {chat_id}: {data}")
 
@@ -640,14 +644,24 @@ class OffertissimeScontiTelegramBot:
         print("📡 In ascolto per nuovi messaggi (premi CTRL+C per arrestare)...")
 
         while True:
-            updates = self.get_updates()
-            for u in updates:
-                self.last_update_id = u["update_id"]
-                if "message" in u:
-                    self.handle_message(u["message"])
-                elif "callback_query" in u:
-                    self.handle_callback(u["callback_query"])
-            time.sleep(1)
+            try:
+                updates = self.get_updates()
+                for u in updates:
+                    self.last_update_id = u["update_id"]
+                    try:
+                        if "message" in u:
+                            self.handle_message(u["message"])
+                        elif "callback_query" in u:
+                            self.handle_callback(u["callback_query"])
+                    except Exception as handler_err:
+                        print(f"❌ Errore nella gestione dell'update {u.get('update_id')}: {handler_err}")
+                time.sleep(1)
+            except KeyboardInterrupt:
+                print("🛑 Polling interrotto dall'utente.")
+                raise
+            except Exception as loop_err:
+                print(f"❌ Errore imprevisto nel loop di polling: {loop_err}")
+                time.sleep(2)
 
 if __name__ == "__main__":
     token = get_bot_token()

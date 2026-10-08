@@ -157,5 +157,33 @@ class TestTelegramBotExtended(unittest.TestCase):
             self.assertEqual(bot.handle_message.call_count, 1)
             self.assertEqual(bot.handle_callback.call_count, 1)
 
+    def test_run_polling_handler_and_loop_exceptions(self):
+        bot = OffertissimeScontiTelegramBot("fake_token")
+        bot.test_connection = MagicMock(return_value={"ok": True, "result": {"username": "test_bot"}})
+        bot.get_updates = MagicMock(side_effect=[
+            [{"update_id": 10, "message": {"text": "/test", "chat": {"id": 1}}}],
+            Exception("Loop error"),
+            KeyboardInterrupt()
+        ])
+        bot.handle_message = MagicMock(side_effect=Exception("Handler crash"))
+
+        with patch("time.sleep", return_value=None):
+            with self.assertRaises(KeyboardInterrupt):
+                bot.run_polling()
+            self.assertEqual(bot.handle_message.call_count, 1)
+
+    def test_handle_callback_empty_or_malformed(self):
+        bot = OffertissimeScontiTelegramBot("fake_token")
+        bot.send_message = MagicMock()
+        bot.answer_callback_query = MagicMock()
+
+        # Missing cb id
+        bot.handle_callback({"message": {"chat": {"id": 123}}, "data": "menu_deals"})
+        bot.send_message.assert_not_called()
+
+        # Missing chat id
+        bot.handle_callback({"id": "cb1", "message": None, "data": "menu_deals"})
+        bot.send_message.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()
