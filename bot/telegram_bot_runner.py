@@ -408,6 +408,14 @@ class OffertissimeScontiTelegramBot:
         print(f"📩 Ricevuto messaggio da {first_name} ({chat_id}): '{text}'")
 
         if text.startswith("/start"):
+            args = text.split(maxsplit=1)
+            payload = args[1].strip() if len(args) > 1 else ""
+
+            if payload.startswith("track_"):
+                sku_id = payload.replace("track_", "").strip()
+                self.handle_deeplink_track(chat_id, sku_id)
+                return
+
             welcome_text = (
                 f"👋 Ciao <b>{first_name}</b>, benvenuto su <b>OFFERTISSIMESCONTI</b>! ⚡\n\n"
                 f"Siamo il tuo radar intelligente per gli acquisti su Amazon. "
@@ -535,6 +543,63 @@ class OffertissimeScontiTelegramBot:
                 ]
             }
             self.send_message(chat_id, text, reply_markup=kb)
+
+    def handle_deeplink_track(self, chat_id: int, sku_id: str):
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM products_catalog WHERE sku_id = ? OR asin = ?", (sku_id, sku_id))
+        p = cur.fetchone()
+        conn.close()
+
+        if not p:
+            self.send_message(
+                chat_id,
+                f"⚠️ Prodotto <code>{sku_id}</code> non trovato nel radar.",
+                reply_markup=self.get_main_menu_keyboard()
+            )
+            return
+
+        p_dict = dict(p)
+        curr = p_dict["current_price"]
+        atl = p_dict["all_time_low"]
+        t10 = round(curr * 0.90, 2)
+        t15 = round(curr * 0.85, 2)
+        t20 = round(curr * 0.80, 2)
+
+        caption = (
+            f"🎯 <b>IMPOSTA ALLARME PREZZO SUL PRODOTTO</b>\n\n"
+            f"📦 <b>{p_dict['title']}</b>\n"
+            f"💰 Prezzo Attuale: <b>€{curr:.2f}</b>\n"
+            f"📉 Minimo Storico: €{atl:.2f}\n\n"
+            f"Tocca una delle opzioni rapide per ricevere un messaggio istantaneo "
+            f"appena il prezzo scende, oppure invia <code>/track {p_dict['sku_id']} &lt;prezzo&gt;</code>:"
+        )
+
+        buttons = [
+            [
+                {"text": f"🔔 -10% (€{t10:.2f})", "callback_data": f"track_{p_dict['sku_id']}_{t10}"},
+                {"text": f"🔔 -15% (€{t15:.2f})", "callback_data": f"track_{p_dict['sku_id']}_{t15}"},
+                {"text": f"🔔 -20% (€{t20:.2f})", "callback_data": f"track_{p_dict['sku_id']}_{t20}"}
+            ]
+        ]
+        if atl < curr:
+            buttons.append([
+                {"text": f"🏆 Al Minimo Storico (€{atl:.2f})", "callback_data": f"track_{p_dict['sku_id']}_{atl}"}
+            ])
+        buttons.append([
+            {"text": "🛒 Acquista su Amazon", "url": p_dict["affiliate_url"]}
+        ])
+        buttons.append([
+            {"text": "🔙 Menu Principale", "callback_data": "menu_main"}
+        ])
+
+        kb = {"inline_keyboard": buttons}
+        img_url = p_dict.get("image_url")
+        if img_url:
+            self.send_photo(chat_id, img_url, caption=caption, reply_markup=kb)
+        else:
+            self.send_message(chat_id, caption, reply_markup=kb)
 
     def handle_callback(self, cb: Dict):
         cb_id = cb.get("id")
