@@ -200,7 +200,6 @@ function setupEventListeners() {
 
   // Load More
   loadMoreBtn.addEventListener('click', () => {
-    currentOffset += currentLimit;
     loadProducts(false);
   });
 
@@ -349,8 +348,9 @@ async function fetchCatalogData() {
 async function loadProducts(reset = true) {
   if (reset) {
     currentOffset = 0;
-    productsGrid.innerHTML = '';
     resultsCount.textContent = 'Ricerca sconti in corso...';
+  } else {
+    currentOffset += currentLimit;
   }
 
   const catalog = await fetchCatalogData();
@@ -404,24 +404,35 @@ async function loadProducts(reset = true) {
     filtered.sort((a, b) => (b.keepa_drop_percent || 0) - (a.keepa_drop_percent || 0));
   }
 
-  const sliceEnd = currentOffset + currentLimit;
-  currentProducts = filtered.slice(0, sliceEnd);
+  if (reset) {
+    const pageSlice = filtered.slice(0, currentLimit);
+    currentProducts = pageSlice;
+    renderProducts(pageSlice, true);
+  } else {
+    const pageSlice = filtered.slice(currentOffset, currentOffset + currentLimit);
+    currentProducts = currentProducts.concat(pageSlice);
+    renderProducts(pageSlice, false);
+  }
 
-  renderProducts(currentProducts, true);
   resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${filtered.length} sconti trovati)`;
   loadMoreBtn.style.display = (currentProducts.length >= filtered.length) ? 'none' : 'inline-flex';
 }
 
 function renderProducts(products, reset) {
-  if (products.length === 0 && reset) {
-    productsGrid.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
-        <span style="font-size: 3rem;">🔍</span>
-        <h3 style="margin-top: 10px;">Nessun prodotto trovato</h3>
-        <p style="color: var(--text-muted);">Prova ad allentare i filtri di ricerca o la percentuale di sconto.</p>
-      </div>
-    `;
-    return;
+  if (reset) {
+    if (products.length === 0) {
+      productsGrid.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+          <span style="font-size: 3rem;">🔍</span>
+          <h3 style="margin-top: 10px;">Nessun prodotto trovato</h3>
+          <p style="color: var(--text-muted);">Prova ad allentare i filtri di ricerca o la percentuale di sconto.</p>
+        </div>
+      `;
+      return;
+    }
+    if (currentView === 'grid') {
+      productsGrid.innerHTML = '';
+    }
   }
 
   // --- Modalità Lista Compatta Professionale ---
