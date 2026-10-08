@@ -394,6 +394,7 @@ function renderProducts(products, reset) {
         <td>
           <div class="table-price">€${p.current_price.toFixed(2)}</div>
           <span class="table-old-price">€${p.list_price.toFixed(2)}</span>
+          <div class="price-verified-badge" style="font-size:0.68rem; padding:1px 6px; margin-top:2px;"><span class="verified-dot"></span> Amazon.it</div>
         </td>
         <td>
           <strong style="color:var(--success);">€${p.all_time_low.toFixed(2)}</strong>
@@ -476,6 +477,7 @@ function renderProducts(products, reset) {
         <span class="price-current">€${p.current_price.toFixed(2)}</span>
         <span class="price-old">€${p.list_price.toFixed(2)}</span>
       </div>
+      <div class="price-verified-badge"><span class="verified-dot"></span> Prezzo Reale Amazon.it Sincronizzato</div>
       <div class="price-avg">Media ultimi 30gg: <strong>€${p.avg_price_30d.toFixed(2)}</strong></div>
 
       <div class="card-actions">

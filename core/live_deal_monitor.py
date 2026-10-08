@@ -225,16 +225,57 @@ class LiveDealMonitor:
         self.check_user_alerts()
         return True
 
-    def run_periodic_monitoring(self, interval_seconds: int = 60):
+    def sync_live_prices_for_monitored_products(self) -> int:
+        """
+        Interroga Amazon.it in tempo reale per tutti i prodotti attivamente
+        tracciati dagli utenti in 'user_alerts' per rilevare sconti immediati.
+        """
+        from core.amazon_live_price_fetcher import AmazonLivePriceFetcher
+
+        conn = sqlite3.connect(self.db_path)
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT p.sku_id, p.asin
+            FROM user_alerts a
+            JOIN products_catalog p ON a.product_id = p.sku_id
+            WHERE a.active = 1
+        """)
+        monitored = cur.fetchall()
+        conn.close()
+
+        updated = 0
+        for sku_id, asin in monitored:
+            if not asin:
+                continue
+            res = AmazonLivePriceFetcher.fetch_asin(asin, use_cache=False)
+            if res.get("success") and res.get("current_price"):
+                new_price = float(res["current_price"])
+                if self.update_product_price(sku_id, new_price):
+                    updated += 1
+            time.sleep(0.5)
+
+        return updated
+
+    def run_periodic_monitoring(self, interval_seconds: int = 30):
         print("📡 Motore Live Deal Monitor avviato.")
         print(f"⏱ Frequenza di scansione: ogni {interval_seconds} secondi.")
+        loop_count = 0
         while True:
+            # Ogni 5 cicli (~2.5 minuti), sincronizza i prezzi live dei prodotti tracciati
+            if loop_count % 5 == 0:
+                try:
+                    synced = self.sync_live_prices_for_monitored_products()
+                    if synced > 0:
+                        print(f"🔄 Sincronizzati {synced} prezzi reali da Amazon.it per i prodotti tracciati.")
+                except Exception as e:
+                    print(f"⚠️ Errore sincronizzazione live: {e}")
+
             notified = self.check_user_alerts()
             if notified > 0:
                 print(f"🔔 Inviati {notified} allarmi prezzo agli utenti!")
+            loop_count += 1
             time.sleep(interval_seconds)
 
 if __name__ == "__main__":
     monitor = LiveDealMonitor()
     monitor.run_periodic_monitoring(interval_seconds=30)
-    print(f"Allarmi inviati durante il test: {notified}")

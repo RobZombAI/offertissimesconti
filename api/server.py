@@ -11,7 +11,11 @@ import sqlite3
 import os
 import mimetypes
 
+import sys
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 DB_PATH = os.path.join(BASE_DIR, "data", "amazon_3000_master_catalog.db")
 WEB_DIR = os.path.join(BASE_DIR, "web")
 
@@ -203,9 +207,18 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                     self.send_header("Access-Control-Allow-Origin", "*")
                     self.end_headers()
                     self.wfile.write(content)
-                    return
                 else:
                     self._send_json(404, {"error": "File di export non trovato"})
+                    return
+
+            elif path == "/api/live_price":
+                asin = query.get("asin", [""])[0]
+                if not asin:
+                    self._send_json(400, {"success": False, "error": "Parametro 'asin' obbligatorio"})
+                    return
+                from core.amazon_live_price_fetcher import AmazonLivePriceFetcher
+                data = AmazonLivePriceFetcher.fetch_asin(asin)
+                self._send_json(200, data)
 
             elif path == "/api/health":
                 self._send_json(200, {"status": "healthy", "brand": "OFFERTISSIMESCONTI", "version": "2.0"})
