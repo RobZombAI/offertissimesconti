@@ -22,6 +22,8 @@ from typing import Dict, List, Optional, Tuple
 sys.stdout.reconfigure(line_buffering=True)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 DB_PATH = os.path.join(BASE_DIR, "data", "amazon_3000_master_catalog.db")
 ENV_FILE = os.path.join(BASE_DIR, ".env")
 
@@ -45,7 +47,7 @@ class TelegramChannelBroadcaster:
     ):
         env = load_env()
         self.bot_token = bot_token or os.environ.get("TELEGRAM_BOT_TOKEN") or env.get("TELEGRAM_BOT_TOKEN", "")
-        self.channel_id = channel_id or os.environ.get("TELEGRAM_CHANNEL_ID") or env.get("TELEGRAM_CHANNEL_ID", "@Offertissimesconti")
+        self.channel_id = channel_id or os.environ.get("TELEGRAM_CHANNEL_ID") or env.get("TELEGRAM_CHANNEL_ID", "-1003838698998")
         self.db_path = db_path
         self.api_url = f"https://api.telegram.org/bot{self.bot_token}"
         self.init_broadcast_table()
@@ -120,7 +122,8 @@ class TelegramChannelBroadcaster:
         cur.execute(f"""
             SELECT p.*,
                    (p.list_price - p.current_price) AS savings_eur,
-                   CASE WHEN p.current_price <= p.all_time_low * 1.01 THEN 1 ELSE 0 END AS is_atl
+                   CASE WHEN p.current_price <= p.all_time_low * 1.01 THEN 1 ELSE 0 END AS is_atl,
+                   CASE WHEN ph.sku_id IS NOT NULL THEN 1 ELSE 0 END AS is_fresh_drop
             FROM products_catalog p
             LEFT JOIN (
                 SELECT sku_id, MAX(posted_at) as last_posted
@@ -128,6 +131,11 @@ class TelegramChannelBroadcaster:
                 WHERE datetime(posted_at) >= datetime('now', '-{cooldown_hours} hours')
                 GROUP BY sku_id
             ) recent ON p.sku_id = recent.sku_id
+            LEFT JOIN (
+                SELECT DISTINCT sku_id
+                FROM price_history
+                WHERE datetime(recorded_at) >= datetime('now', '-24 hours')
+            ) ph ON p.sku_id = ph.sku_id
             WHERE recent.sku_id IS NULL
               AND p.current_price > 0
               AND p.list_price > p.current_price
@@ -135,6 +143,7 @@ class TelegramChannelBroadcaster:
               AND p.image_url IS NOT NULL AND p.image_url != ''
               AND p.affiliate_url IS NOT NULL AND p.affiliate_url != ''
             ORDER BY 
+                is_fresh_drop DESC,
                 is_atl DESC,
                 p.keepa_drop_percent DESC,
                 p.virality_score DESC
@@ -175,7 +184,15 @@ class TelegramChannelBroadcaster:
         is_atl = curr_price <= (atl * 1.01)
         is_cyclical = deal.get("is_cyclical", 0)
 
-        badge_header = "🏆 <b>NUOVO MINIMO STORICO ASSOLUTO!</b>" if is_atl else f"🔥 <b>SUPER SCONTO DEL {drop:.0f}%!</b>"
+        is_fresh = bool(deal.get("is_fresh_drop"))
+        if is_fresh and is_atl:
+            badge_header = "⚡ <b>RIBASSO FLASH RILEVATO ADESSO!</b>\n🏆 <b>NUOVO MINIMO STORICO ASSOLUTO!</b>"
+        elif is_fresh:
+            badge_header = f"⚡ <b>NUOVO RIBASSO FLASH RILEVATO!</b> (-{drop:.0f}%)"
+        elif is_atl:
+            badge_header = "🏆 <b>NUOVO MINIMO STORICO ASSOLUTO!</b>"
+        else:
+            badge_header = f"🔥 <b>SUPER SCONTO DEL {drop:.0f}%!</b>"
         cyclical_line = f"🔄 <i>Consumabile: ciclo riacquisto ~{deal.get('cycle_days', 30)}gg</i>\n" if is_cyclical else ""
 
         html = (
@@ -287,6 +304,30 @@ class TelegramChannelBroadcaster:
 
         return self.broadcast_deal(deal)
 
+    def populate_channel(self, count: int = 5, sleep_seconds: float = 2.5) -> List[Dict]:
+        """
+        Carica un lotto iniziale di offerte tra le migliori attualmente presenti nel catalogo,
+        alternando le categorie e inviandole al canale con una breve pausa per rispettare
+        i rate limit di Telegram.
+        """
+        published = []
+        print(f"📦 Avvio caricamento iniziale di {count} offerte presenti sul canale {self.channel_id}...")
+        for i in range(count):
+            deal = self.get_next_deal_to_broadcast()
+            if not deal:
+                print(f"ℹ️ Nessun'altra offerta qualificata disponibile (inviate {len(published)}).")
+                break
+            res = self.broadcast_deal(deal)
+            if res.get("ok"):
+                published.append(deal)
+                print(f"   [{i+1}/{count}] Pubblicato: {deal['title'][:40]}... (€{deal['current_price']:.2f})")
+            else:
+                print(f"   [{i+1}/{count}] Errore invio: {res}")
+            if i < count - 1:
+                time.sleep(sleep_seconds)
+        print(f"✅ Caricamento completato: {len(published)} offerte pubblicate con successo!")
+        return published
+
     def run_continuous_broadcaster(self, interval_seconds: int = 600):
         """
         Ciclo principale: pubblica una nuova offerta ogni 10 minuti (default 600s).
@@ -307,7 +348,7 @@ class TelegramChannelBroadcaster:
                 if env_curr.get("TELEGRAM_CHANNEL_ID"):
                     self.channel_id = env_curr["TELEGRAM_CHANNEL_ID"]
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                print(f"\n[{now_str}] 🔄 Ciclo #{loop_count}: Selezione offerta per il canale...")
+                print(f"\n[{now_str}] 🔄 Ciclo #{loop_count}: Verifica nuove offerte per il canale...")
 
                 # Verifica se il bot può postare sul canale
                 perm_check = self.check_channel_permissions()
@@ -318,8 +359,12 @@ class TelegramChannelBroadcaster:
                     print(f"   💡 Promemoria: Assicurati di aver aggiunto @offertissimesconti_radar_bot come Amministratore nel canale {self.channel_id} con permesso 'Pubblica Messaggi'.")
                 else:
                     res = self.run_broadcast_cycle()
-                    if not res.get("ok") and "not a member" in str(res.get("description", "")).lower():
+                    if res.get("ok"):
+                        print(f"✅ Offerta pubblicata con successo. Prossimo aggiornamento tra {interval_seconds // 60} minuti.")
+                    elif not res.get("ok") and "not a member" in str(res.get("description", "")).lower():
                         print(f"⚠️ Aggiungi @offertissimesconti_radar_bot come Amministratore nel canale {self.channel_id}.")
+                    else:
+                        print(f"ℹ️ Nessuna nuova offerta da pubblicare in questo ciclo ({res.get('reason', res)}). Prossimo controllo tra {interval_seconds // 60} minuti.")
 
             except KeyboardInterrupt:
                 print("\n🛑 Broadcaster arrestato dall'utente.")
@@ -332,8 +377,9 @@ class TelegramChannelBroadcaster:
 def main():
     parser = argparse.ArgumentParser(description="OffertissimeSconti Telegram Channel Broadcaster")
     parser.add_argument("--once", action="store_true", help="Pubblica una singola offerta e termina")
+    parser.add_argument("--populate", type=int, default=0, help="Carica subito N offerte presenti sul canale prima di avviare il loop o terminare")
     parser.add_argument("--interval", type=int, default=600, help="Intervallo di pubblicazione in secondi (default 600 = 10 min)")
-    parser.add_argument("--channel", type=str, default=None, help="Canale di destinazione Telegram (es. @Offertissimesconti)")
+    parser.add_argument("--channel", type=str, default=None, help="Canale di destinazione Telegram (es. @Offertissimesconti o -100...)")
     parser.add_argument("--test-channel", action="store_true", help="Verifica permessi del bot sul canale e termina")
     parser.add_argument("--dry-run", action="store_true", help="Seleziona e formatta la prossima offerta senza inviarla a Telegram")
     args = parser.parse_args()
@@ -361,6 +407,11 @@ def main():
         else:
             print("Nessuna offerta trovata.")
         sys.exit(0)
+
+    if args.populate > 0:
+        broadcaster.populate_channel(count=args.populate)
+        if args.once:
+            sys.exit(0)
 
     if args.once:
         res = broadcaster.run_broadcast_cycle()
