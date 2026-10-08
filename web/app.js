@@ -706,9 +706,9 @@ function renderProducts(products, reset) {
       </h3>
 
       <!-- Price Trend Sparkline Box (Cliccabile per ingrandire) -->
-      <div class="radar-chart-box chart-clickable" data-sku="${p.sku_id}" style="cursor: pointer;" title="Clicca per aprire il grafico dettagliato completo">
+      <div class="radar-chart-box chart-clickable" data-sku="${p.sku_id}" style="cursor: pointer;" title="Clicca per aprire il grafico dettagliato completo (1 Anno)">
         <div class="chart-header">
-          <span>Andamento Storico Reale (90gg)</span>
+          <span>Storico Prezzi Reale (1 Anno)</span>
           <span style="color: #10b981; font-weight:700;">Minimo: €${p.all_time_low.toFixed(2)}</span>
         </div>
         ${sparklineSvg}
@@ -863,7 +863,7 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
     };
   }
 
-  const timeline = getProductPriceTimeline(p, '90d');
+  const timeline = getProductPriceTimeline(p, '1y');
   const width = 280;
   const height = 54;
   const paddingX = 8;
@@ -873,7 +873,8 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
   const chartWidth = width - (paddingX * 2);
 
   const prices = timeline.map(t => t.price);
-  const maxPrice = Math.max(...prices, p.avg_price_90d || 0) * 1.04;
+  const pYearAvg = p.avg_price_2022_2024 || p.avg_price_90d || p.list_price * 0.9;
+  const maxPrice = Math.max(...prices, pYearAvg, p.list_price * 0.95) * 1.03;
   const minPrice = Math.min(...prices, p.all_time_low || 0) * 0.96;
   const range = (maxPrice - minPrice) || 1;
 
@@ -886,12 +887,12 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
   const lastPtX = getX(timeline.length - 1);
   const lastPtY = getY(p.current_price);
   const atlY = getY(p.all_time_low);
-  const p90Y = getY(p.avg_price_90d);
+  const pYearY = getY(pYearAvg);
 
   const gradId = `grad_${(p.sku_id || 'def').replace(/[^a-zA-Z0-9]/g, '_')}`;
 
   return `
-    <svg class="chart-sparkline" viewBox="0 0 ${width} ${height}" style="cursor: pointer;" title="Clicca per visualizzare il grafico prezzi completo (1 Anno)">
+    <svg class="chart-sparkline" viewBox="0 0 ${width} ${height}" style="cursor: pointer;" title="Storico Prezzi 1 Anno (12 Mesi) - Clicca per aprire il grafico dettagliato">
       <defs>
         <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stop-color="#2563eb" stop-opacity="0.30" />
@@ -899,8 +900,8 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
         </linearGradient>
       </defs>
       
-      <!-- Baseline Media 90 Giorni (Dashed) -->
-      <line x1="${paddingX}" y1="${p90Y}" x2="${width - paddingX}" y2="${p90Y}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
+      <!-- Baseline Media 1 Anno (Dashed) -->
+      <line x1="${paddingX}" y1="${pYearY}" x2="${width - paddingX}" y2="${pYearY}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" />
       
       <!-- Baseline Minimo Storico (Green Dashed) -->
       <line x1="${paddingX}" y1="${atlY}" x2="${width - paddingX}" y2="${atlY}" stroke="#10b981" stroke-width="1" stroke-dasharray="3,2" />
@@ -908,7 +909,7 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
       <!-- Area Sfumata -->
       <polygon fill="url(#${gradId})" points="${areaPoints}" />
 
-      <!-- Linea di Tendenza Reale -->
+      <!-- Linea di Tendenza Reale (1 Anno / 12 Mesi) -->
       <polyline
         fill="none"
         stroke="#2563eb"
@@ -922,9 +923,9 @@ function generateRadarSparkline(pOrP90, p30, pCurrent, pAtl) {
       <circle cx="${lastPtX}" cy="${lastPtY}" r="6" fill="#f59e0b" fill-opacity="0.25" />
       <circle cx="${lastPtX}" cy="${lastPtY}" r="3.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.5" />
 
-      <!-- Asse Temporale Bottom Labels -->
-      <text x="${paddingX}" y="${height - 2}" font-size="8" fill="#94a3b8" font-weight="600">90gg fa</text>
-      <text x="${width / 2}" y="${height - 2}" font-size="8" fill="#94a3b8" font-weight="600" text-anchor="middle">30gg fa</text>
+      <!-- Asse Temporale Bottom Labels: 1 Anno -->
+      <text x="${paddingX}" y="${height - 2}" font-size="8" fill="#94a3b8" font-weight="600">1 Anno fa</text>
+      <text x="${width / 2}" y="${height - 2}" font-size="8" fill="#94a3b8" font-weight="600" text-anchor="middle">6 Mesi fa</text>
       <text x="${width - paddingX}" y="${height - 2}" font-size="8" fill="#2563eb" font-weight="700" text-anchor="end">Oggi</text>
     </svg>
   `;
