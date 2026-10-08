@@ -34,8 +34,8 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 33.3
     },
     {
-        "asin": "B076611K66",
-        "title": "Florence Siero Viso Bio Vitamina C, E e Acido Ialuronico Puro 60ml",
+        "asin": "B0C6772V73",
+        "title": "Florence Siero Viso Bio Vitamina C, E e Acido Ialuronico Puro 100ml",
         "brand": "Florence Bio",
         "macro_category_id": "beauty_personal_care",
         "macro_category_name": "Bellezza e Cura della Persona",
@@ -60,7 +60,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 38.8
     },
     {
-        "asin": "B08N582H3N",
+        "asin": "B0H4ZQFSR8",
         "title": "Finish Quantum Ultimate Pastiglie Lavastoviglie Limone (Maxi Box 160 Caps)",
         "brand": "Finish",
         "macro_category_id": "cleaning_household",
@@ -73,7 +73,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 35.6
     },
     {
-        "asin": "B073ZFM4Q8",
+        "asin": "B0F7G34MTS",
         "title": "Brita Maxtra+ Confezione 6 Filtri Ricambio per Caraffe Filtranti (Durata 6 Mesi)",
         "brand": "Brita",
         "macro_category_id": "cleaning_household",
@@ -99,7 +99,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 33.3
     },
     {
-        "asin": "B08L8B1T8F",
+        "asin": "B0F431PJNM",
         "title": "Gritin Fasce Elastiche di Resistenza Set da 5 Bande Fitness con Sacca",
         "brand": "Gritin",
         "macro_category_id": "sports_fitness_gear",
@@ -151,7 +151,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 41.8
     },
     {
-        "asin": "B07W7H9Q5S",
+        "asin": "B0GRVDCRC9",
         "title": "COSORI Friggitrice ad Aria 5.5L XXL con 11 Programmi e Ricettario",
         "brand": "COSORI",
         "macro_category_id": "home_kitchen",
@@ -164,7 +164,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 35.7
     },
     {
-        "asin": "B08J5F3G18",
+        "asin": "B0FJJM9R3Z",
         "title": "Ring Video Doorbell Campanello Smart Wi-Fi HD 1080p con Rilevazione Movimento",
         "brand": "Ring",
         "macro_category_id": "electronics_gadgets",
@@ -178,7 +178,7 @@ VERIFIED_BENCHMARKS = [
     },
     # Real DIY products
     {
-        "asin": "B0001P0XMI",
+        "asin": "B0F1G84JLF",
         "title": "Stanley Flessometro Tylon Nastro Metrico 5m con Blocco e Clip",
         "brand": "Stanley",
         "macro_category_id": "diy_tools_garden",
@@ -191,7 +191,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 42.0
     },
     {
-        "asin": "B0001P0XOC",
+        "asin": "B01NCXCY4L",
         "title": "Bosch Set 32 Pezzi Inserti Avvitamento con Portainserti a Cambio Rapido",
         "brand": "Bosch",
         "macro_category_id": "diy_tools_garden",
@@ -218,7 +218,7 @@ VERIFIED_BENCHMARKS = [
         "keepa_drop_percent": 32.0
     },
     {
-        "asin": "B0797YQ94Z",
+        "asin": "B07V698P9F",
         "title": "PUMA Calze Sportive Unisex Sneaker Socks Cotone Elasticizzato (Pack 6)",
         "brand": "Puma",
         "macro_category_id": "apparel_basics",
