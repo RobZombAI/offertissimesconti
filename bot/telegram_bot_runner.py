@@ -95,6 +95,8 @@ class OffertissimeScontiTelegramBot:
         """Invia una foto reale del prodotto con didascalia e pulsanti inline."""
         if not photo_url:
             return self.send_message(chat_id, caption or "", reply_markup=reply_markup, parse_mode=parse_mode)
+        if "images-eu.ssl-images-amazon.com" in photo_url or photo_url.endswith(".gif"):
+            photo_url = "https://robzombai.github.io/offertissimesconti/images/logo.jpg"
 
         url = f"{self.api_url}/sendPhoto"
         # Limite caption Telegram è 1024 caratteri

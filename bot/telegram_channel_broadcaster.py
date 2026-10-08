@@ -234,7 +234,9 @@ class TelegramChannelBroadcaster:
             return {"ok": False, "error": "Token Telegram o Canale non configurato"}
 
         caption, keyboard = self.format_channel_post(deal)
-        photo_url = deal.get("image_url")
+        photo_url = (deal.get("image_url") or "").strip()
+        if not photo_url or "images-eu.ssl-images-amazon.com" in photo_url or photo_url.endswith(".gif"):
+            photo_url = "https://robzombai.github.io/offertissimesconti/images/logo.jpg"
 
         # Invia con foto se disponibile
         url = f"{self.api_url}/sendPhoto"
