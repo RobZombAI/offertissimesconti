@@ -45,6 +45,16 @@ function showToast(message, icon = '⚡') {
   }, 2600);
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 // DOM Elements
 const productsGrid = document.getElementById('productsGrid');
 const resultsCount = document.getElementById('resultsCount');
@@ -404,6 +414,26 @@ async function loadProducts(reset = true) {
     filtered.sort((a, b) => (b.keepa_drop_percent || 0) - (a.keepa_drop_percent || 0));
   }
 
+  // Gestione Universal Amazon Search Banner per ricerche attive
+  const banner = document.getElementById('universalSearchBanner');
+  if (banner) {
+    if (searchQuery) {
+      banner.classList.remove('hidden');
+      const encodedQ = encodeURIComponent(searchQuery);
+      banner.innerHTML = `
+        <div class="search-banner-inner">
+          <span>🔎 Risultati per "<strong>${escapeHtml(searchQuery)}</strong>" nei 3.200 minimi storici monitorati. Vuoi esplorare l'intero catalogo Amazon?</span>
+          <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Cerca qualsiasi prodotto su Amazon.it con link affiliato">
+            🛒 Cerca su tutto Amazon.it ↗
+          </a>
+        </div>
+      `;
+    } else {
+      banner.classList.add('hidden');
+      banner.innerHTML = '';
+    }
+  }
+
   if (reset) {
     const pageSlice = filtered.slice(0, currentLimit);
     currentProducts = pageSlice;
@@ -421,13 +451,52 @@ async function loadProducts(reset = true) {
 function renderProducts(products, reset) {
   if (reset) {
     if (products.length === 0) {
-      productsGrid.innerHTML = `
-        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
-          <span style="font-size: 3rem;">🔍</span>
-          <h3 style="margin-top: 10px;">Nessun prodotto trovato</h3>
-          <p style="color: var(--text-muted);">Prova ad allentare i filtri di ricerca o la percentuale di sconto.</p>
-        </div>
-      `;
+      if (searchQuery) {
+        const encodedQ = encodeURIComponent(searchQuery);
+        const asinMatch = searchQuery.match(/(?:dp\/|gp\/product\/|asin=|\b)([B0-9][A-Z0-9]{9})\b/i);
+        const asin = asinMatch ? asinMatch[1].toUpperCase() : null;
+        const asinDirectUrl = asin 
+          ? `https://www.amazon.it/dp/${asin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`
+          : null;
+
+        productsGrid.innerHTML = `
+          <div class="universal-search-card">
+            <div class="universal-search-badge">🔍 Ricerca Totale Amazon.it</div>
+            <h3 class="universal-search-title">Cerca "<strong>${escapeHtml(searchQuery)}</strong>" su tutto Amazon</h3>
+            <p class="universal-search-desc">
+              Questo articolo non è attualmente tra i 3.200 sconti a minimo storico monitorati, 
+              ma puoi cercarlo, confrontarlo e acquistarlo subito su Amazon.it con tutte le promozioni attive e la spedizione Prime.
+            </p>
+            <div class="universal-search-actions">
+              ${asin ? `
+                <a href="${asinDirectUrl}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-lg" style="width:100%; justify-content:center; margin-bottom:6px;">
+                  🚀 Apri Scheda Prodotto Diretta (ASIN: ${asin}) ↗
+                </a>
+              ` : ''}
+              <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-lg">
+                🛒 Cerca "${escapeHtml(searchQuery)}" su Amazon.it ↗
+              </a>
+              <a href="https://www.amazon.it/s?k=${encodedQ}&pct-off=20-&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-lg">
+                🏷 Offerte con Sconto (-20%+) ↗
+              </a>
+              <a href="https://www.amazon.it/s?k=${encodedQ}&rh=p_76%3A490210031&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-lg">
+                ⚡ Spedizione Prime Gratuita ↗
+              </a>
+            </div>
+            <div class="universal-search-footer">
+              ✅ Link di acquisto verificato con accredito commissioni • Tag: <code>${OFFICIAL_ASSOCIATE_TAG}</code>
+            </div>
+          </div>
+        `;
+      } else {
+        productsGrid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px;">
+            <span style="font-size: 3rem;">🔍</span>
+            <h3 style="margin-top: 10px;">Nessun prodotto trovato</h3>
+            <p style="color: var(--text-muted);">Prova ad allentare i filtri di ricerca o la percentuale di sconto.</p>
+          </div>
+        `;
+      }
       return;
     }
     if (currentView === 'grid') {
