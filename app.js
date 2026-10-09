@@ -243,7 +243,7 @@ function setupEventListeners() {
             <span class="suggestion-item-icon">🚀</span>
             <div>
               <div class="suggestion-item-text">Apri Prodotto su Amazon.it (ASIN: ${asin})</div>
-              <div class="suggestion-item-sub">Acquisto verificato con accredito al canale • Cookie 24h attivo</div>
+              <div class="suggestion-item-sub">Scheda prodotto ufficiale con prezzi in tempo reale e Prime</div>
             </div>
           </div>
           <span class="suggestion-item-badge amazon">Vai al Prodotto ↗</span>
@@ -269,7 +269,7 @@ function setupEventListeners() {
           <span class="suggestion-item-icon">🛒</span>
           <div>
             <div class="suggestion-item-text">Cerca "${escapeHtml(query)}" su tutto Amazon.it</div>
-            <div class="suggestion-item-sub">Navigazione libera: qualsiasi acquisto nelle 24h successive supporta il canale</div>
+            <div class="suggestion-item-sub">Esplora milioni di prodotti e promozioni su Amazon.it</div>
           </div>
         </div>
         <span class="suggestion-item-badge amazon">Amazon Live ↗</span>
@@ -414,12 +414,12 @@ function setupEventListeners() {
     if (converterResult) {
       converterResult.classList.remove('hidden');
       converterResult.innerHTML = `
-        <div class="converter-result-title">✅ Link Affiliato Ufficiale Generato con Successo!</div>
+        <div class="converter-result-title">✅ Scheda Prodotto Pronta!</div>
         <div style="font-size:0.86rem; margin-bottom:6px; color:#334155;">${description}</div>
         <div class="converter-result-url">${escapeHtml(targetUrl)}</div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
           <a href="${targetUrl}" target="_blank" rel="noopener sponsored" class="btn btn-primary" style="flex:1; justify-content:center; text-decoration:none;">
-            🚀 Apri su Amazon.it (Supporta il Canale) ↗
+            🚀 Apri su Amazon.it ↗
           </a>
           <button type="button" class="btn btn-outline" id="btnCopyGeneratedUrl">
             📋 Copia Link
@@ -428,7 +428,7 @@ function setupEventListeners() {
       `;
       document.getElementById('btnCopyGeneratedUrl')?.addEventListener('click', () => {
         navigator.clipboard.writeText(targetUrl).then(() => {
-          showToast('Link affiliato copiato negli appunti!', '📋');
+          showToast('Link copiato negli appunti!', '📋');
         });
       });
     }
@@ -657,7 +657,7 @@ async function loadProducts(reset = true) {
       if (isLiveResults) {
         banner.innerHTML = `
           <div class="search-banner-inner">
-            <span>🌐 <strong>Risultati Live Amazon.it:</strong> Stai visualizzando i prodotti in tempo reale da Amazon per "<strong>${escapeHtml(searchQuery)}</strong>". Tutti i link includono il tuo tag affiliato.</span>
+            <span>🌐 <strong>Risultati Live Amazon.it:</strong> Stai visualizzando i prodotti in tempo reale da Amazon per "<strong>${escapeHtml(searchQuery)}</strong>".</span>
             <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Apri direttamente la ricerca su Amazon.it">
               Apri su Amazon.it ↗
             </a>
@@ -668,7 +668,7 @@ async function loadProducts(reset = true) {
           <div class="search-banner-inner">
             <span>🔎 Risultati radar per "<strong>${escapeHtml(searchQuery)}</strong>" (${filtered.length} sconti trovati). Vuoi confrontare l'intero catalogo Amazon.it in tempo reale?</span>
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Apri ricerca diretta su Amazon con cookie 24h">
+              <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Apri ricerca diretta su Amazon.it">
                 🛒 Cerca su Amazon.it ↗
               </a>
               <button type="button" class="btn-banner-amazon" id="btnSwitchLiveAmazon" style="border:none; cursor:pointer; background:#2563eb;" title="Carica risultati live da Amazon">
@@ -703,7 +703,7 @@ async function loadProducts(reset = true) {
   }
 
   if (isLiveResults) {
-    resultsCount.textContent = `Mostrati ${currentProducts.length} risultati ufficiali da Amazon.it per "${searchQuery || 'offerte'}" (con link affiliato attivo)`;
+    resultsCount.textContent = `Mostrati ${currentProducts.length} risultati ufficiali da Amazon.it per "${searchQuery || 'offerte'}"`;
   } else {
     resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${filtered.length} sconti trovati)`;
   }
@@ -746,7 +746,7 @@ function renderProducts(products, reset) {
               </a>
             </div>
             <div class="universal-search-footer">
-              ✅ Link di acquisto verificato con accredito commissioni • Tag: <code>${OFFICIAL_ASSOCIATE_TAG}</code>
+              ✅ Spedizione rapida Prime e garanzia ufficiale Amazon.it
             </div>
           </div>
         `;
@@ -756,7 +756,7 @@ function renderProducts(products, reset) {
             <div class="universal-search-badge">🌐 Tutto Amazon Live</div>
             <h3 class="universal-search-title">Esplora l'Intero Catalogo di Amazon.it</h3>
             <p class="universal-search-desc">
-              Digita qualsiasi prodotto o marca nella barra di ricerca in alto per verificare offerte e disponibilità in tempo reale, oppure visita direttamente i reparti ufficiali con il cookie affiliato attivo per 24 ore.
+              Digita qualsiasi prodotto o marca nella barra di ricerca in alto per verificare offerte e disponibilità in tempo reale, oppure visita direttamente i reparti ufficiali di Amazon.it.
             </p>
             <div class="universal-search-actions">
               <a href="https://www.amazon.it/gp/goldbox?tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-lg">
@@ -766,11 +766,11 @@ function renderProducts(products, reset) {
                 📦 Amazon Seconda Mano (-20%) ↗
               </a>
               <a href="https://www.amazon.it/?tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-lg">
-                🛒 Homepage Amazon.it (Cookie 24h Attivo) ↗
+                🛒 Homepage Amazon.it ↗
               </a>
             </div>
             <div class="universal-search-footer">
-              ✅ Qualsiasi acquisto completerai nelle prossime 24 ore sosterrà il canale senza costi aggiuntivi per te!
+              ✅ Prezzi ufficiali Amazon con promozioni attive e spedizione rapida.
             </div>
           </div>
         `;
