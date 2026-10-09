@@ -93,59 +93,90 @@ class AmazonLivePriceFetcher:
                     except Exception:
                         pass
 
-                # Pattern B: customerVisiblePrice
+                # Pattern B: Label di accessibilità apex-pricetopay
+                if current_price is None:
+                    p2p_acc = re.search(r'id=\"apex-pricetopay-accessibility-label\"[^>]*>\s*([0-9.,]+)\s*(?:&nbsp;)?€', html)
+                    if p2p_acc:
+                        try:
+                            v = float(p2p_acc.group(1).replace(".", "").replace(",", "."))
+                            if v >= 0.49:
+                                current_price = v
+                        except Exception:
+                            pass
+
+                # Pattern C: corePriceDisplay widget (pulito categoricamente da pricePerUnit)
+                core_m = re.search(r'<div id=\"(?:corePriceDisplay_desktop_feature_div|corePrice_desktop|apex_desktop)\"[^>]*>(.*?)</div>\s*</div>\s*</div>', html, re.DOTALL)
+                core_cleaned = ""
+                if core_m:
+                    core_cleaned = re.sub(r'<(?:div|span)[^>]*class=\"[^\"]*(?:pricePerUnit|contains-ppu|apex-priceperunit)[^\"]*\".*?</(?:div|span)>', '', core_m.group(1), flags=re.DOTALL)
+                    if current_price is None:
+                        ptp = re.search(r'class=\"[^\"]*priceToPay[^\"]*\"[^>]*>.*?class=\"a-price-whole\">([0-9.,]+)</span>.*?class=\"a-price-fraction\">([0-9]+)</span>', core_cleaned, re.DOTALL)
+                        if ptp:
+                            try:
+                                v = float(f"{ptp.group(1).replace('.', '')}.{ptp.group(2)}")
+                                if v >= 0.49:
+                                    current_price = v
+                            except Exception:
+                                pass
+
+                # Pattern D: customerVisiblePrice
                 if current_price is None:
                     cvp = re.search(r"customerVisiblePrice\]\[displayString\]\"\s*value=\"([0-9.,]+)[\s\xa0]*€?\"", html)
                     if cvp:
                         try:
-                            current_price = float(cvp.group(1).replace(".", "").replace(",", "."))
+                            v = float(cvp.group(1).replace(".", "").replace(",", "."))
+                            if v >= 0.49:
+                                current_price = v
                         except Exception:
                             pass
 
-                # Pattern C: corePriceDisplay o priceToPay con a-offscreen
+                # Pattern E: price_inside_buybox
                 if current_price is None:
-                    ptp = re.search(r"priceToPay.*?<span class=\"a-offscreen\">([0-9.,]+)[\s\xa0]*€</span>", html, re.DOTALL)
-                    if ptp:
+                    p_bb = re.search(r'id=\"price_inside_buybox\"[^>]*>([0-9.,]+)[\s\xa0]*€?</span>', html)
+                    if p_bb:
                         try:
-                            current_price = float(ptp.group(1).replace(".", "").replace(",", "."))
-                        except Exception:
-                            pass
-
-                # Pattern D: a-price-whole e a-price-fraction
-                if current_price is None:
-                    pw = re.search(r"<span class=\"a-price-whole\">([0-9.,]+)</span>.*?<span class=\"a-price-fraction\">([0-9]+)</span>", html, re.DOTALL)
-                    if pw:
-                        try:
-                            w = pw.group(1).replace(".", "").replace(",", "")
-                            f = pw.group(2)
-                            current_price = float(f"{w}.{f}")
+                            v = float(p_bb.group(1).replace(".", "").replace(",", "."))
+                            if v >= 0.49:
+                                current_price = v
                         except Exception:
                             pass
 
                 # 4. Prezzo di Listino Consigliato / Barrato Ufficiale Amazon (RRP / Strikethrough)
+                # Tassativamente cercato SOLO dentro il widget principale core_cleaned del prodotto
                 list_price = None
-                strikes = re.findall(r'data-a-strike=\"true\"[^>]*>.*?class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
-                basis = re.findall(r'class=\"[^\"]*basisPrice[^\"]*\"[^>]*>.*?class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
-                cons = re.findall(r'Prezzo consigliato:[^<]*<span[^>]*class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
-                med = re.findall(r'Prezzo mediano:[^<]*<span[^>]*class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
-                rec = re.findall(r'Prezzo più basso recente:[^<]*<span[^>]*class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
-                old_strike = re.findall(r'<span class=\"a-size-small a-color-secondary a-text-strike\">([0-9.,]+)[\s\xa0]*€?</span>', html)
-                
-                all_strikes = strikes + basis + cons + med + rec + old_strike
-                for s in all_strikes:
-                    try:
-                        v = float(s.replace(".", "").replace(",", "."))
-                        if current_price and v > current_price:
-                            list_price = v
-                            break
-                        elif not list_price and v > 0:
-                            list_price = v
-                    except Exception:
-                        pass
+                if core_cleaned and current_price:
+                    bp_label = re.search(r'apex-basisprice-offscreen-label[^>]*>[^0-9]*([0-9.,]+)\s*(?:&nbsp;)?€', core_cleaned)
+                    if bp_label:
+                        try:
+                            v = float(bp_label.group(1).replace(".", "").replace(",", "."))
+                            if v > current_price and v <= (current_price * 3.5):
+                                list_price = v
+                        except Exception:
+                            pass
+
+                    if list_price is None:
+                        strike_m = re.search(r'apex-basisprice-value[^>]*data-a-strike=\"true\"[^>]*>.*?<span class=\"a-offscreen\">([0-9.,]+)\s*€?</span>', core_cleaned, re.DOTALL)
+                        if strike_m:
+                            try:
+                                v = float(strike_m.group(1).replace(".", "").replace(",", "."))
+                                if v > current_price and v <= (current_price * 3.5):
+                                    list_price = v
+                            except Exception:
+                                pass
+
+                    if list_price is None:
+                        strike_gen = re.search(r'class=\"[^\"]*basisPrice[^\"]*\"[^>]*>.*?<span class=\"a-offscreen\">([0-9.,]+)\s*€?</span>', core_cleaned, re.DOTALL)
+                        if strike_gen:
+                            try:
+                                v = float(strike_gen.group(1).replace(".", "").replace(",", "."))
+                                if v > current_price and v <= (current_price * 3.5):
+                                    list_price = v
+                            except Exception:
+                                pass
 
                 # Se non c'è prezzo barrato su Amazon (prodotto a prezzo pieno/standard):
                 # list_price = current_price (ZERO moltiplicatori inventati o sconti fittizi)
-                if list_price is None or (current_price and list_price <= current_price):
+                if list_price is None or (current_price and list_price <= current_price) or (current_price and list_price > current_price * 3.5):
                     list_price = current_price
 
                 # 5. Immagine ad alta risoluzione del prodotto
