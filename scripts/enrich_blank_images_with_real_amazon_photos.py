@@ -1,10 +1,14 @@
 """
-Enrich Blank Images with Real Amazon Photos
-OffertissimeSconti - Master Image Resolution Engine
+Enrich Amazon Master Catalog with Real High-Resolution Product Images
+OffertissimeSconti - Image Pipeline
 
-Identifica tutti i prodotti con immagini vuote/corrotte (GIF 1x1 da 43 byte o legacy images-eu)
-ed estrae via streaming multithread la VERA immagine originale Amazon CDN ad alta definizione (SL1500)
-senza MAI toccare titoli, prezzi, ASIN o link affiliati.
+Interroga direttamente le pagine dei prodotti specifici su Amazon.it (https://www.amazon.it/dp/{asin})
+ed estrae l'immagine reale ufficiale ad alta risoluzione (_AC_SL1500_.jpg) da:
+1. data-old-hires
+2. data-a-dynamic-image (massima risoluzione)
+3. colorImages (hiRes / large)
+4. landingImage / main-image / imgBlkFront
+Sincronizza SQLite, JSON web, CSV e TXT.
 """
 
 import os
@@ -28,50 +32,24 @@ CSV_EXPORT_WEB = os.path.join(BASE_DIR, "web", "offertissimesconti_posttap_expor
 TXT_LINKS_DATA = os.path.join(BASE_DIR, "data", "offertissimesconti_links_only.txt")
 TXT_LINKS_WEB = os.path.join(BASE_DIR, "web", "offertissimesconti_links_only.txt")
 
+OFFICIAL_ASSOCIATE_TAG = "offertissimes-21"
+
 USER_AGENTS = [
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
 ]
 
-def check_image_is_blank(url: str) -> bool:
-    """Verifica se un URL immagine è vuoto o restituisce la GIF trasparente 1x1 di 43 byte."""
-    if not url or not url.strip():
-        return True
-    if url.endswith(".gif"):
-        return True
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"}, method="HEAD")
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            cl = int(resp.headers.get("Content-Length", 0))
-            if cl > 0 and cl <= 100:
-                return True
-            if cl > 100:
-                return False
-    except Exception:
-        pass
-
-    try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as resp:
-            data = resp.read(200)
-            return len(data) <= 100
-    except Exception:
-        return True
-
 def fetch_real_amazon_image(asin: str) -> Optional[str]:
-    """Interroga Amazon.it/dp/{asin} ed estrae l'hash dell'immagine originale ad alta risoluzione."""
+    """Interroga Amazon.it/dp/{asin} ed estrae l'immagine originale ad alta risoluzione (SL1500) della pagina specifica."""
     url = f"https://www.amazon.it/dp/{asin}"
     ua = USER_AGENTS[hash(asin) % len(USER_AGENTS)]
     headers = {
         "User-Agent": ua,
-        "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Sec-Ch-Ua": '"Chromium";v="123", "Not:A-Brand";v="8"',
-        "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"macOS"'
+        "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
     }
 
     try:
@@ -79,43 +57,64 @@ def fetch_real_amazon_image(asin: str) -> Optional[str]:
         with urllib.request.urlopen(req, timeout=8) as resp:
             html = resp.read().decode("utf-8", errors="ignore")
 
-        # 1. Selettore principale: landingImage data-a-dynamic-image
-        m = re.search(r'id=\"landingImage\"[^>]+data-a-dynamic-image=\"\{&quot;(https://m\.media-amazon\.com/images/I/([A-Za-z0-9\+\-\_\%]+)\.(?:jpg|jpeg|png))', html, re.I)
-        if m:
-            img_hash = m.group(2)
-            return f"https://m.media-amazon.com/images/I/{img_hash}._AC_SL1500_.jpg"
+        # 1. data-old-hires (Full original master photo)
+        m_hires = re.search(r'data-old-hires=\"(https://[^\"]+?)\"', html)
+        if m_hires:
+            m_key = re.search(r'/images/I/([A-Za-z0-9\-_%+]{8,24})\.', m_hires.group(1))
+            if m_key:
+                return f"https://m.media-amazon.com/images/I/{m_key.group(1)}._AC_SL1500_.jpg"
 
-        # 2. Selettore generico: data-a-dynamic-image
-        m = re.search(r'data-a-dynamic-image=\"\{&quot;(https://m\.media-amazon\.com/images/I/([A-Za-z0-9\+\-\_\%]+)\.(?:jpg|jpeg|png))', html, re.I)
-        if m:
-            img_hash = m.group(2)
-            return f"https://m.media-amazon.com/images/I/{img_hash}._AC_SL1500_.jpg"
+        # 2. data-a-dynamic-image (JSON with resolution map)
+        m_dyn = re.search(r'data-a-dynamic-image=\"(\{.+?\})\"', html)
+        if m_dyn:
+            dyn_str = m_dyn.group(1).replace('&quot;', '"')
+            try:
+                dyn_dict = json.loads(dyn_str)
+                sorted_imgs = sorted(dyn_dict.items(), key=lambda x: x[1][0]*x[1][1] if isinstance(x[1], list) and len(x[1])>=2 else 0, reverse=True)
+                if sorted_imgs:
+                    m_key = re.search(r'/images/I/([A-Za-z0-9\-_%+]{8,24})\.', sorted_imgs[0][0])
+                    if m_key:
+                        return f"https://m.media-amazon.com/images/I/{m_key.group(1)}._AC_SL1500_.jpg"
+            except Exception:
+                pass
 
-        # 3. Selettore JSON colorImages: hiRes
-        m = re.search(r'\"hiRes\":\"(https://m\.media-amazon\.com/images/I/([A-Za-z0-9\+\-\_\%]+)\.(?:jpg|jpeg|png))\"', html, re.I)
-        if m:
-            img_hash = m.group(2)
-            return f"https://m.media-amazon.com/images/I/{img_hash}._AC_SL1500_.jpg"
+        # 3. colorImages JSON (hiRes o large)
+        ci_m = re.search(r'\'colorImages\':\s*\{\s*\'initial\':\s*(\[\{.*?\}\])', html)
+        if ci_m:
+            try:
+                ci_list = json.loads(ci_m.group(1))
+                if ci_list:
+                    raw_url = ci_list[0].get('hiRes') or ci_list[0].get('large')
+                    if raw_url:
+                        m_key = re.search(r'/images/I/([A-Za-z0-9\-_%+]{8,24})\.', raw_url)
+                        if m_key:
+                            return f"https://m.media-amazon.com/images/I/{m_key.group(1)}._AC_SL1500_.jpg"
+            except Exception:
+                pass
 
-        # 4. Selettore JSON colorImages: large
-        m = re.search(r'\"large\":\"(https://m\.media-amazon\.com/images/I/([A-Za-z0-9\+\-\_\%]+)\.(?:jpg|jpeg|png))\"', html, re.I)
-        if m:
-            img_hash = m.group(2)
-            return f"https://m.media-amazon.com/images/I/{img_hash}._AC_SL1500_.jpg"
+        # 4. landingImage src, main-image src, imgBlkFront src
+        m_src = re.search(r'<img[^>]+(?:id=\"landingImage\"|id=\"main-image\"|id=\"imgBlkFront\")[^>]+src=\"(https://[^\"]+?)\"', html)
+        if not m_src:
+            m_src = re.search(r'<img[^>]+src=\"(https://[^\"]+?)\"[^>]+(?:id=\"landingImage\"|id=\"main-image\"|id=\"imgBlkFront\")', html)
+        if m_src:
+            m_key = re.search(r'/images/I/([A-Za-z0-9\-_%+]{8,24})\.', m_src.group(1))
+            if m_key:
+                return f"https://m.media-amazon.com/images/I/{m_key.group(1)}._AC_SL1500_.jpg"
 
-        # 5. Fallback imgBlkFront per libri o categorie speciali
-        m = re.search(r'id=\"imgBlkFront\"[^>]+src=\"(https://m\.media-amazon\.com/images/I/([A-Za-z0-9\+\-\_\%]+)\.(?:jpg|jpeg|png))', html, re.I)
-        if m:
-            img_hash = m.group(2)
-            return f"https://m.media-amazon.com/images/I/{img_hash}._AC_SL1500_.jpg"
+        # 5. Contenitore principale imageBlock / main-image-container
+        m_block = re.search(r'id=\"(?:imageBlock|main-image-container)\"[^>]*>(.*?)<div id=\"(?:productDescription|feature-bullets|centerCol|rightCol)', html, re.DOTALL)
+        if m_block:
+            imgs = re.findall(r'https://[^\"]+media-amazon\.com/images/I/([A-Za-z0-9\-_%+]{8,24})\.', m_block.group(1))
+            if imgs:
+                return f"https://m.media-amazon.com/images/I/{imgs[0]}._AC_SL1500_.jpg"
 
-        # 6. Fallback regex su immagini nel blocco principale
-        all_imgs = re.findall(r'https://m\.media-amazon\.com/images/I/([A-Za-z0-9\+\-\_\%]{8,25})\.(?:jpg|jpeg|png)', html, re.I)
+        # 6. Prima immagine prodotto valida in images/I/
+        all_imgs = re.findall(r'https://m\.media-amazon\.com/images/I/([A-Za-z0-9\-_%+]{8,24})\.', html)
         if all_imgs:
             return f"https://m.media-amazon.com/images/I/{all_imgs[0]}._AC_SL1500_.jpg"
 
         return None
-    except Exception as e:
+    except Exception:
         return None
 
 def sync_all_exports(conn):
@@ -191,37 +190,19 @@ def sync_all_exports(conn):
 
     print("✅ Tutte le esportazioni sono sincronizzate al 100%!")
 
-def run_enrichment(max_workers: int = 15):
-    print("=" * 70)
-    print("🚀 AVVIO ARRICCHIMENTO IMMAGINI AMAZON - MODALITÀ SISTEMICA")
-    print("=" * 70)
+def run_enrichment(max_workers: int = 30):
+    print("=" * 75)
+    print("🚀 RECUPERO IMMAGINI REALI DIRETTAMENTE DALLE PAGINE PRODOTTO AMAZON.IT")
+    print("=" * 75)
 
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute("SELECT asin, title, image_url FROM products_catalog")
-    all_rows = cur.fetchall()
+    cur.execute("SELECT asin, title, image_url FROM products_catalog WHERE image_url LIKE '%images-eu%' OR image_url NOT LIKE '%_AC_SL1500_%'")
+    targets = cur.fetchall()
 
-    print(f"📦 Totale prodotti nel catalogo: {len(all_rows)}")
+    print(f"📦 Totale prodotti con immagini fallback o non ad alta risoluzione: {len(targets)}")
+    print(f"⚡ Concorrenza: {max_workers} worker in parallelo...")
 
-    # Fase 1: Identificazione dei prodotti con immagini vuote o images-eu
-    print("\n🔍 Fase 1: Scansione rapida per identificare immagini vuote (GIF 43 byte o rotte)...")
-    
-    blank_targets = []
-    with ThreadPoolExecutor(max_workers=30) as ex:
-        futures = {ex.submit(check_image_is_blank, row[2]): row for row in all_rows}
-        for fut in as_completed(futures):
-            row = futures[fut]
-            try:
-                if fut.result():
-                    blank_targets.append(row)
-            except Exception:
-                blank_targets.append(row)
-
-    print(f"🎯 Prodotti rilevati con immagine vuota o logo: {len(blank_targets)} su {len(all_rows)}")
-
-    # Fase 2: Estrazione delle vere immagini da Amazon.it
-    print(f"\n⚡ Fase 2: Recupero immagini reali ad alta risoluzione via Amazon CDN con {max_workers} worker...")
-    
     success_count = 0
     fail_count = 0
     start_time = time.time()
@@ -229,11 +210,14 @@ def run_enrichment(max_workers: int = 15):
     def process_item(item):
         asin, title, old_url = item
         new_url = fetch_real_amazon_image(asin)
+        if not new_url:
+            time.sleep(0.4)
+            new_url = fetch_real_amazon_image(asin)
         return asin, title, new_url
 
     batch_to_commit = []
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        futures = {ex.submit(process_item, target): target for target in blank_targets}
+        futures = {ex.submit(process_item, target): target for target in targets}
         done_count = 0
         for fut in as_completed(futures):
             done_count += 1
@@ -249,11 +233,11 @@ def run_enrichment(max_workers: int = 15):
                 conn.commit()
                 batch_to_commit.clear()
 
-            if done_count % 50 == 0 or done_count == len(blank_targets):
+            if done_count % 50 == 0 or done_count == len(targets):
                 elapsed = time.time() - start_time
                 rate = done_count / elapsed if elapsed > 0 else 0
-                pct = (done_count / len(blank_targets)) * 100
-                print(f"   [{done_count}/{len(blank_targets)} - {pct:.1f}%] Successi: {success_count} | Falliti: {fail_count} | Velocità: {rate:.1f} prod/s")
+                pct = (done_count / len(targets)) * 100
+                print(f"   [{done_count}/{len(targets)} - {pct:.1f}%] Successi: {success_count} | Falliti: {fail_count} | Velocità: {rate:.1f} prod/s")
 
     if batch_to_commit:
         cur.executemany("UPDATE products_catalog SET image_url = ? WHERE asin = ?", batch_to_commit)
@@ -261,18 +245,18 @@ def run_enrichment(max_workers: int = 15):
         batch_to_commit.clear()
 
     total_time = time.time() - start_time
-    print(f"\n✨ Fase 2 completata in {total_time:.1f}s!")
-    print(f"   ✅ Immagini reali aggiornate: {success_count}")
+    print(f"\n✨ Recupero immagini completato in {total_time:.1f}s!")
+    print(f"   ✅ Immagini reali aggiornate da pagina Amazon: {success_count}")
     print(f"   ⚠️ Immagini non trovate: {fail_count}")
 
-    # Fase 3: Sincronizzazione export
-    print("\n📦 Fase 3: Sincronizzazione e rigenerazione file export...")
+    # Sincronizzazione export
+    print("\n📦 Sincronizzazione e rigenerazione file export...")
     sync_all_exports(conn)
     conn.close()
     print("\n🎉 Operazione di arricchimento immagini completata con successo!")
 
 if __name__ == "__main__":
-    workers = 15
+    workers = 30
     if len(sys.argv) > 1:
         try:
             workers = int(sys.argv[1])
