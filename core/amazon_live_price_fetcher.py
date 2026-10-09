@@ -122,26 +122,31 @@ class AmazonLivePriceFetcher:
                         except Exception:
                             pass
 
-                # 4. Prezzo di Listino Consigliato (RRP barrato)
+                # 4. Prezzo di Listino Consigliato / Barrato Ufficiale Amazon (RRP / Strikethrough)
                 list_price = None
-                lp_m = re.search(r"class=\"[^\"]*basisPrice[^\"]*\"[^>]*>.*?<span class=\"a-offscreen\">([0-9.,]+)[\s\xa0]*€</span>", html, re.DOTALL)
-                if not lp_m:
-                    lp_m = re.search(r"Prezzo consigliato:.*?<span class=\"a-offscreen\">([0-9.,]+)[\s\xa0]*€</span>", html, re.DOTALL)
-                if not lp_m:
-                    lp_m = re.search(r"<span class=\"a-size-small a-color-secondary a-text-strike\">([0-9.,]+)[\s\xa0]*€</span>", html)
-                if not lp_m:
-                    lp_m = re.search(r"Prezzo di listino:.*?<span class=\"a-offscreen\">([0-9.,]+)[\s\xa0]*€</span>", html, re.DOTALL)
-                if lp_m:
+                strikes = re.findall(r'data-a-strike=\"true\"[^>]*>.*?class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
+                basis = re.findall(r'class=\"[^\"]*basisPrice[^\"]*\"[^>]*>.*?class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
+                cons = re.findall(r'Prezzo consigliato:[^<]*<span[^>]*class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
+                med = re.findall(r'Prezzo mediano:[^<]*<span[^>]*class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
+                rec = re.findall(r'Prezzo più basso recente:[^<]*<span[^>]*class=\"a-offscreen\">([0-9\.\,]+)\s*€?</span>', html, re.DOTALL)
+                old_strike = re.findall(r'<span class=\"a-size-small a-color-secondary a-text-strike\">([0-9.,]+)[\s\xa0]*€?</span>', html)
+                
+                all_strikes = strikes + basis + cons + med + rec + old_strike
+                for s in all_strikes:
                     try:
-                        list_price = float(lp_m.group(1).replace(".", "").replace(",", "."))
+                        v = float(s.replace(".", "").replace(",", "."))
+                        if current_price and v > current_price:
+                            list_price = v
+                            break
+                        elif not list_price and v > 0:
+                            list_price = v
                     except Exception:
                         pass
 
-                # Se non c'è list_price esplicito, impostiamo una soglia coerente con il prezzo corrente
-                if list_price is None and current_price is not None:
-                    list_price = round(current_price * 1.20, 2)
-                elif list_price is not None and current_price is not None and list_price < current_price:
-                    list_price = round(current_price * 1.15, 2)
+                # Se non c'è prezzo barrato su Amazon (prodotto a prezzo pieno/standard):
+                # list_price = current_price (ZERO moltiplicatori inventati o sconti fittizi)
+                if list_price is None or (current_price and list_price <= current_price):
+                    list_price = current_price
 
                 # 5. Immagine ad alta risoluzione del prodotto
                 img_match = re.search(r"\"landingAsinColor\":.*?\"hiRes\":\"([^\"]+)\"", html)

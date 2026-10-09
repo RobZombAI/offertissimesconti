@@ -626,7 +626,7 @@ function renderProducts(products, reset) {
         </td>
         <td>
           <div class="table-price">€${p.current_price.toFixed(2)}</div>
-          <span class="table-old-price">€${p.list_price.toFixed(2)}</span>
+          ${p.list_price > p.current_price ? `<span class="table-old-price">€${p.list_price.toFixed(2)}</span>` : ''}
           <div class="price-verified-badge" style="font-size:0.68rem; padding:1px 6px; margin-top:2px;"><span class="verified-dot"></span> Amazon.it</div>
         </td>
         <td>
@@ -634,7 +634,9 @@ function renderProducts(products, reset) {
           <div style="font-size:0.74rem; color:#64748b;">Media 30gg: €${p.avg_price_30d.toFixed(2)}</div>
         </td>
         <td>
-          <span class="badge-discount">-${p.keepa_drop_percent}%</span>
+          ${p.list_price > p.current_price && p.keepa_drop_percent > 0 
+            ? `<span class="badge-discount">-${p.keepa_drop_percent}%</span>` 
+            : `<span style="color:#64748b; font-size:0.75rem; font-weight:700; background:#f1f5f9; padding:2px 6px; border-radius:4px;">Netto</span>`}
         </td>
         <td>
           ${cyclicalBadge}
@@ -683,9 +685,27 @@ function renderProducts(products, reset) {
     const sparklineSvg = generateRadarSparkline(p);
     const imgUrl = p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';
 
+    const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
+    const discountBadge = hasRealDiscount 
+      ? `<span class="badge-discount">-${p.keepa_drop_percent}% Reale</span>`
+      : (p.all_time_low && p.current_price <= p.all_time_low * 1.01 
+          ? `<span class="badge-discount" style="background:#059669; color:#ffffff;">🏆 Minimo Storico</span>` 
+          : `<span style="background:#f1f5f9; color:#475569; font-weight:700; font-size:0.72rem; padding:2px 7px; border-radius:6px; border:1px solid #e2e8f0;">Prezzo Amazon</span>`);
+
+    const pricesSectionHtml = hasRealDiscount
+      ? `
+        <span class="price-current">€${p.current_price.toFixed(2)}</span>
+        <span class="price-old" title="Prezzo di listino o consigliato ufficiale Amazon.it">€${p.list_price.toFixed(2)}</span>
+        <span style="font-size:0.75rem; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; margin-left:auto;">Risparmi €${(p.list_price - p.current_price).toFixed(2)}</span>
+      `
+      : `
+        <span class="price-current">€${p.current_price.toFixed(2)}</span>
+        <span style="font-size:0.74rem; font-weight:700; color:#64748b; background:#f8fafc; border:1px solid #e2e8f0; padding:2px 7px; border-radius:6px; margin-left:auto;">Prezzo Netto Amazon</span>
+      `;
+
     card.innerHTML = `
       <div class="card-top">
-        <span class="badge-discount">-${p.keepa_drop_percent}% Reale</span>
+        ${discountBadge}
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
           ${liveBadge}
           ${atlBadge}
@@ -715,9 +735,7 @@ function renderProducts(products, reset) {
       </div>
 
       <div class="card-prices">
-        <span class="price-current">€${p.current_price.toFixed(2)}</span>
-        <span class="price-old">€${p.list_price.toFixed(2)}</span>
-        <span style="font-size:0.75rem; font-weight:800; color:#047857; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 6px; border-radius:6px; margin-left:auto;">Risparmi €${(p.list_price - p.current_price).toFixed(2)}</span>
+        ${pricesSectionHtml}
       </div>
       <div class="price-verified-badge"><span class="verified-dot"></span> Prezzo Reale Amazon.it Sincronizzato</div>
       <div class="price-avg">Media ultimi 30gg: <strong>€${p.avg_price_30d.toFixed(2)}</strong></div>
@@ -774,11 +792,11 @@ function getProductPriceTimeline(p, range = '1y') {
   };
 
   const current = Number(p.current_price) || 19.99;
-  const list = Number(p.list_price) || current * 1.35;
+  const list = Number(p.list_price) > current ? Number(p.list_price) : (Number(p.avg_price_90d) > current ? Number(p.avg_price_90d) : current);
   const atl = Number(p.all_time_low) || current;
-  const p30 = Number(p.avg_price_30d) || current * 1.15;
-  const p90 = Number(p.avg_price_90d) || current * 1.25;
-  const pYearAvg = Number(p.avg_price_2022_2024) || Math.min(list, (p90 * 1.12 + list) / 2);
+  const p30 = Number(p.avg_price_30d) || current;
+  const p90 = Number(p.avg_price_90d) || current;
+  const pYearAvg = Number(p.avg_price_2022_2024) || Math.min(list, (p90 * 1.05 + list) / 2);
 
   let milestones = [];
 
@@ -996,7 +1014,10 @@ function openPriceChartModal(skuId, initialRange = '1y') {
     <div class="radar-badge-callout">
       <span style="font-size: 1.25rem;">🛡️</span>
       <div id="chartCalloutText">
-        <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato. Il prodotto è attualmente a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo di listino di <s>€${p.list_price.toFixed(2)}</s> e alla media di <strong>€${p.avg_price_90d.toFixed(2)}</strong> negli ultimi mesi.
+        ${p.list_price > p.current_price && p.keepa_drop_percent > 0
+          ? `<strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato su Amazon.it. Il prodotto è attualmente in offerta a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo barrato ufficiale di <s>€${p.list_price.toFixed(2)}</s> (risparmio reale di €${(p.list_price - p.current_price).toFixed(2)}) e a una media di <strong>€${p.avg_price_90d.toFixed(2)}</strong> negli ultimi mesi.`
+          : `<strong>Algoritmo Radar Anti-Finti Sconti:</strong> Prezzo netto ufficiale Amazon.it. Il prodotto è venduto al miglior prezzo di <strong>€${p.current_price.toFixed(2)}</strong> senza rincari fittizi (nessun finto prezzo barrato gonfiato), con prezzo in linea con la media di <strong>€${p.avg_price_90d.toFixed(2)}</strong>.`
+        }
       </div>
     </div>
 
@@ -1061,6 +1082,7 @@ function openPriceChartModal(skuId, initialRange = '1y') {
     // Aggiornamento Pillole Metriche
     const metricsContainer = document.getElementById('chartMetricsContainer');
     if (metricsContainer) {
+      const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
       metricsContainer.innerHTML = `
         <div class="metric-pill">
           <div class="metric-pill-label">Prezzo Oggi</div>
@@ -1075,8 +1097,10 @@ function openPriceChartModal(skuId, initialRange = '1y') {
           <div class="metric-pill-value">€${benchmarkPrice.toFixed(2)}</div>
         </div>
         <div class="metric-pill">
-          <div class="metric-pill-label">Sconto Reale Verificato</div>
-          <div class="metric-pill-value text-discount">-${savingsPct}% (-€${savingsEuro})</div>
+          <div class="metric-pill-label">${hasRealDiscount ? 'Sconto Reale Barrato' : 'Stato Offerta'}</div>
+          <div class="metric-pill-value ${hasRealDiscount ? 'text-discount' : ''}" style="${!hasRealDiscount ? 'color:#059669; font-weight:700;' : ''}">
+            ${hasRealDiscount ? `-${p.keepa_drop_percent}% (-€${(p.list_price - p.current_price).toFixed(2)})` : 'Prezzo Netto Amazon'}
+          </div>
         </div>
       `;
     }
@@ -1213,9 +1237,16 @@ function openPriceChartModal(skuId, initialRange = '1y') {
     const calloutEl = document.getElementById('chartCalloutText');
     if (calloutEl) {
       const periodText = selectedRange === '1y' ? 'negli ultimi 12 mesi' : (selectedRange === '30d' ? 'negli ultimi 30 giorni' : 'negli ultimi 3 mesi');
-      calloutEl.innerHTML = `
-        <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato. Il prodotto è attualmente a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo di listino di <s>€${p.list_price.toFixed(2)}</s> e a una media di <strong>€${benchmarkPrice.toFixed(2)}</strong> ${periodText}.
-      `;
+      const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
+      if (hasRealDiscount) {
+        calloutEl.innerHTML = `
+          <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Sconto autentico verificato su Amazon.it. Il prodotto è attualmente in offerta a <strong>€${p.current_price.toFixed(2)}</strong> rispetto al prezzo barrato ufficiale di <s>€${p.list_price.toFixed(2)}</s> (risparmio reale di €${(p.list_price - p.current_price).toFixed(2)}) e a una media di <strong>€${benchmarkPrice.toFixed(2)}</strong> ${periodText}.
+        `;
+      } else {
+        calloutEl.innerHTML = `
+          <strong>Algoritmo Radar Anti-Finti Sconti:</strong> Prezzo netto ufficiale Amazon.it. Il prodotto è venduto al miglior prezzo di <strong>€${p.current_price.toFixed(2)}</strong> senza rincari fittizi (nessun finto prezzo barrato gonfiato), con prezzo in linea con la media di <strong>€${benchmarkPrice.toFixed(2)}</strong> ${periodText}.
+        `;
+      }
     }
 
     // Tooltip bindings
