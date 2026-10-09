@@ -43,8 +43,8 @@
       </nav>
 
       <div class="header-actions">
-        <button id="openAmazonGatewayBtn" class="btn btn-amazon-header" title="Supporta il canale con i tuoi acquisti su Amazon">
-          🛒 Compra su Amazon
+        <button id="openAmazonGatewayBtn" class="btn btn-amazon-header" title="Cerca su Amazon.it">
+          🛒 Cerca su Amazon
         </button>
         <a href="https://t.me/offertissimesconti_radar_bot" target="_blank" rel="noopener" class="btn btn-telegram">
           <svg class="tg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -81,14 +81,14 @@
         <div id="searchSuggestionsDropdown" class="search-suggestions-dropdown hidden"></div>
       </div>
 
-      <!-- Quick Amazon Gateway Shortcuts -->
+      <!-- Quick Amazon Shortcuts -->
       <div class="amazon-quick-shortcuts">
-        <span class="shortcut-label">🌐 Naviga Amazon con Tag (Cookie 24h):</span>
+        <span class="shortcut-label">🌐 Scorciatoie Amazon.it:</span>
         <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🔥 Offerte del Giorno</a>
         <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">📦 Seconda Mano (-20%)</a>
         <a href="https://www.amazon.it/gp/bestsellers?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🏆 Più Venduti</a>
         <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🛒 Tutto Amazon.it</a>
-        <button id="btnOpenConverterHero" class="quick-link-pill pill-highlight">✨ Converti Link/ASIN</button>
+        <button id="btnOpenConverterHero" class="quick-link-pill pill-highlight">✨ Cerca Link / ASIN</button>
       </div>
 
       <!-- Quick Category Chips -->
@@ -188,7 +188,7 @@
     <!-- Active Filters Badge / Counter & Info Bar -->
     <div class="results-info-bar">
       <span id="resultsCount">Caricamento prodotti in corso...</span>
-      <span class="export-hint">💡 Catalogo prodotti reali con tag <code>offertissimes-21</code></span>
+      <span class="export-hint">💡 Catalogo prodotti verificati con storico prezzi e sconti reali</span>
     </div>
 
     <!-- Universal Search Banner (Attivo durante le ricerche su Amazon) -->
@@ -449,55 +449,42 @@
     </div>
   </dialog>
 
-  <!-- Modal: Amazon Shopping Gateway & Convertitore ASIN -->
+  <!-- Modal: Naviga & Cerca su Amazon.it -->
   <dialog id="amazonGatewayDialog" class="modal-dialog">
     <div class="modal-box modal-box-large">
       <div class="modal-header">
         <div>
-          <span class="badge-pill" style="font-size:0.75rem; background:#fef3c7; color:#b45309;">Supporta OffertissimeSconti a Costo Zero</span>
-          <h3 id="amazonGatewayModalTitle" style="margin-top:4px;">🛒 Shopping Gateway Ufficiale Amazon.it</h3>
+          <span class="badge-pill" style="font-size:0.75rem; background:#eff6ff; color:#2563eb;">Catalogo & Ricerca Ufficiale</span>
+          <h3 id="amazonGatewayModalTitle" style="margin-top:4px;">🛒 Cerca & Acquista su Amazon.it</h3>
         </div>
         <button id="closeAmazonGatewayModalBtn" class="close-btn" aria-label="Chiudi finestra">&times;</button>
       </div>
       <div class="modal-body" id="amazonGatewayModalBody">
         <div class="gateway-explainer">
           <p>
-            Stai per comprare qualsiasi articolo su Amazon che non è attualmente presente nel nostro radar sconti? 
-            <strong>Puoi supportare il nostro canale e il nostro lavoro senza spendere un solo centesimo in più!</strong>
+            Cerca qualsiasi prodotto sul catalogo completo di Amazon.it, confronta le offerte in tempo reale o incolla direttamente il link o codice ASIN per aprire la scheda con spedizione rapida Prime.
           </p>
-          <div class="cookie-rule-box">
-            <span class="cookie-rule-icon">⏱️</span>
-            <div>
-              <strong>Come funziona la Sessione di Tracciamento Amazon (24 Ore / 89 Giorni):</strong>
-              <p>
-                Nel momento in cui clicchi su uno qualsiasi dei nostri link o converti un prodotto, Amazon attiva sul tuo browser il nostro tag affiliato (<code>offertissimes-21</code>) 
-                per le <strong>successive 24 ore</strong>. Qualsiasi acquisto completerai su Amazon (in qualunque categoria, anche cercando altri prodotti o cambiando decine di pagine) 
-                riconoscerà una piccola commissione al nostro canale. Il prezzo finale per te è <strong>identico al centesimo</strong>. 
-                Inoltre, se aggiungi articoli al carrello, il tracciamento rimane valido fino a <strong>89 giorni</strong>!
-              </p>
-            </div>
-          </div>
         </div>
 
         <!-- Tool: Convertitore Link / ASIN Rapido -->
         <div class="converter-box">
-          <h4>🔗 Convertitore Rapido Link o ASIN Amazon</h4>
-          <p class="converter-sub">Hai già il link o il codice ASIN del prodotto che vuoi comprare? Incollalo qui sotto:</p>
+          <h4>🔗 Apri Link Diretto o Codice ASIN</h4>
+          <p class="converter-sub">Hai già il link o il codice ASIN del prodotto che vuoi visualizzare? Incollalo qui sotto:</p>
           <div class="converter-input-row">
             <input type="text" id="converterInput" placeholder="Incolla link Amazon (es. amazon.it/dp/B08...) o ASIN (es. B08N5WRWNW)">
-            <button id="converterBtn" class="btn btn-primary">Genera Link Affiliato 🚀</button>
+            <button id="converterBtn" class="btn btn-primary">Apri Prodotto 🚀</button>
           </div>
           <div id="converterResult" class="converter-result hidden"></div>
         </div>
 
         <!-- Hub Reparti Amazon -->
-        <h4 style="margin-top: 24px; margin-bottom: 12px; font-size: 1.1rem;">🌐 Esplora i Reparti Ufficiali con Tag Attivo</h4>
+        <h4 style="margin-top: 24px; margin-bottom: 12px; font-size: 1.1rem;">🌐 Esplora i Reparti Ufficiali di Amazon.it</h4>
         <div class="departments-grid">
           <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
             <span class="dept-icon">🛒</span>
             <div>
               <strong>Homepage Amazon.it</strong>
-              <span>Navigazione libera con cookie 24h</span>
+              <span>Tutto il catalogo e le offerte</span>
             </div>
           </a>
           <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
