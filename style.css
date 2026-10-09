@@ -2315,3 +2315,334 @@ button, input, select {
   padding-top: 14px;
 }
 
+/* ==========================================================================
+   Header Amazon Gateway Button & Quick Shortcuts
+   ========================================================================== */
+.btn-amazon-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #ff9900 0%, #e67e00 100%);
+  color: #111827 !important;
+  font-weight: 800;
+  font-size: 0.86rem;
+  padding: 8px 15px;
+  border-radius: var(--radius-sm);
+  border: 1px solid #d97706;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.25);
+  transition: all var(--transition-fast);
+}
+
+.btn-amazon-header:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.35);
+}
+
+.search-box-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.search-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 36px -8px rgba(15, 23, 42, 0.18);
+  z-index: 1000;
+  overflow: hidden;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.search-suggestions-dropdown.hidden {
+  display: none !important;
+}
+
+.suggestion-group-title {
+  padding: 8px 16px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f8fafc;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-decoration: none;
+  color: inherit;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover, .suggestion-item.active {
+  background: #f1f5f9;
+}
+
+.suggestion-item-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.suggestion-item-icon {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+
+.suggestion-item-text {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-item-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.suggestion-item-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.suggestion-item-badge.amazon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.suggestion-item-badge.prime {
+  background: #e0f2fe;
+  color: #0284c7;
+}
+
+.amazon-quick-shortcuts {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.shortcut-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.quick-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.quick-link-pill:hover {
+  background: #f8fafc;
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.quick-link-pill.pill-highlight {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+}
+
+.quick-link-pill.pill-highlight:hover {
+  background: #dcfce7;
+  border-color: #22c55e;
+}
+
+/* ==========================================================================
+   Amazon Gateway Modal & ASIN Converter Tool
+   ========================================================================== */
+.gateway-explainer {
+  font-size: 0.95rem;
+  color: #334155;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.cookie-rule-box {
+  display: flex;
+  gap: 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-top: 12px;
+}
+
+.cookie-rule-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.cookie-rule-box strong {
+  display: block;
+  font-size: 0.92rem;
+  color: #92400e;
+  margin-bottom: 4px;
+}
+
+.cookie-rule-box p {
+  font-size: 0.85rem;
+  color: #78350f;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.converter-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  margin-top: 16px;
+}
+
+.converter-box h4 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.converter-sub {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.converter-input-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.converter-input-row input {
+  flex: 1;
+  min-width: 260px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+}
+
+.converter-input-row input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.converter-result {
+  margin-top: 14px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-sm);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.converter-result.hidden {
+  display: none !important;
+}
+
+.converter-result-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #166534;
+  margin-bottom: 8px;
+}
+
+.converter-result-url {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 4px;
+  word-break: break-all;
+  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.departments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.dept-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  text-decoration: none;
+  color: #1e293b;
+  transition: all var(--transition-fast);
+}
+
+.dept-card:hover {
+  border-color: var(--primary);
+  background: #f0f7ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.dept-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.dept-card strong {
+  display: block;
+  font-size: 0.88rem;
+  color: #0f172a;
+}
+
+.dept-card span {
+  font-size: 0.74rem;
+  color: #64748b;
+}
+
