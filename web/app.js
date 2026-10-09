@@ -180,20 +180,139 @@ function setupEventListeners() {
     }
   });
 
-  // Search Clear Button
+  // Search Clear & Live Suggestions
   const clearSearchBtn = document.getElementById('clearSearchBtn');
+  const searchSuggestionsDropdown = document.getElementById('searchSuggestionsDropdown');
+  let searchDebounceTimer = null;
+
   searchInput.addEventListener('input', () => {
-    if (searchInput.value.trim().length > 0) {
+    const val = searchInput.value.trim();
+    if (val.length > 0) {
       clearSearchBtn?.classList.remove('hidden');
     } else {
       clearSearchBtn?.classList.add('hidden');
     }
+
+    clearTimeout(searchDebounceTimer);
+    if (!val) {
+      searchSuggestionsDropdown?.classList.add('hidden');
+      if (searchSuggestionsDropdown) searchSuggestionsDropdown.innerHTML = '';
+      return;
+    }
+
+    searchDebounceTimer = setTimeout(() => {
+      renderSearchSuggestions(val);
+    }, 180);
   });
+
+  // Hide suggestions dropdown on click outside
+  document.addEventListener('click', (e) => {
+    if (!searchInput.contains(e.target) && !searchSuggestionsDropdown?.contains(e.target)) {
+      searchSuggestionsDropdown?.classList.add('hidden');
+    }
+  });
+
+  function renderSearchSuggestions(query) {
+    if (!searchSuggestionsDropdown) return;
+    const lower = query.toLowerCase();
+    
+    // Check if query is an ASIN or Amazon Link
+    const asinMatch = query.match(/(?:dp\/|gp\/product\/|asin=|\b)([B0-9][A-Z0-9]{9})\b/i);
+    const asin = asinMatch ? asinMatch[1].toUpperCase() : null;
+
+    // Count local matches in rawCatalog
+    let localMatches = 0;
+    if (rawCatalog && rawCatalog.length > 0) {
+      localMatches = rawCatalog.filter(p => 
+        (p.title || '').toLowerCase().includes(lower) ||
+        (p.brand || '').toLowerCase().includes(lower) ||
+        (p.sub_category_name || '').toLowerCase().includes(lower) ||
+        (p.asin || '').toLowerCase().includes(lower)
+      ).length;
+    }
+
+    const encodedQ = encodeURIComponent(query);
+    let html = '';
+
+    if (asin) {
+      const asinUrl = `https://www.amazon.it/dp/${asin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
+      html += `
+        <div class="suggestion-group-title">🎯 Rilevato Codice / Link Amazon Diretto</div>
+        <a href="${asinUrl}" target="_blank" rel="noopener sponsored" class="suggestion-item">
+          <div class="suggestion-item-main">
+            <span class="suggestion-item-icon">🚀</span>
+            <div>
+              <div class="suggestion-item-text">Apri Prodotto su Amazon.it (ASIN: ${asin})</div>
+              <div class="suggestion-item-sub">Acquisto verificato con accredito al canale • Cookie 24h attivo</div>
+            </div>
+          </div>
+          <span class="suggestion-item-badge amazon">Vai al Prodotto ↗</span>
+        </a>
+      `;
+    }
+
+    html += `
+      <div class="suggestion-group-title">🔍 Opzioni di Ricerca & Offerte Amazon</div>
+      <div class="suggestion-item" id="suggestLocalSearch">
+        <div class="suggestion-item-main">
+          <span class="suggestion-item-icon">🎯</span>
+          <div>
+            <div class="suggestion-item-text">Cerca "${escapeHtml(query)}" sul Radar Sconti</div>
+            <div class="suggestion-item-sub">${localMatches > 0 ? `${localMatches} prodotti trovati con storico prezzi e minimi` : 'Cerca tra i 3.233 prodotti monitorati'}</div>
+          </div>
+        </div>
+        <span class="suggestion-item-badge">${localMatches} sconti</span>
+      </div>
+
+      <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="suggestion-item">
+        <div class="suggestion-item-main">
+          <span class="suggestion-item-icon">🛒</span>
+          <div>
+            <div class="suggestion-item-text">Cerca "${escapeHtml(query)}" su tutto Amazon.it</div>
+            <div class="suggestion-item-sub">Navigazione libera: qualsiasi acquisto nelle 24h successive supporta il canale</div>
+          </div>
+        </div>
+        <span class="suggestion-item-badge amazon">Amazon Live ↗</span>
+      </a>
+
+      <a href="https://www.amazon.it/s?k=${encodedQ}&pct-off=20-&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="suggestion-item">
+        <div class="suggestion-item-main">
+          <span class="suggestion-item-icon">🏷️</span>
+          <div>
+            <div class="suggestion-item-text">Filtra per Offerte con Sconto (-20%+)</div>
+            <div class="suggestion-item-sub">Solo promozioni e coupon attivi per "${escapeHtml(query)}"</div>
+          </div>
+        </div>
+        <span class="suggestion-item-badge">Offerte ↗</span>
+      </a>
+
+      <a href="https://www.amazon.it/s?k=${encodedQ}&rh=p_76%3A490210031&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="suggestion-item">
+        <div class="suggestion-item-main">
+          <span class="suggestion-item-icon">⚡</span>
+          <div>
+            <div class="suggestion-item-text">Solo con Spedizione Gratuita Prime</div>
+            <div class="suggestion-item-sub">Consegna rapida garantita per "${escapeHtml(query)}"</div>
+          </div>
+        </div>
+        <span class="suggestion-item-badge prime">Prime ↗</span>
+      </a>
+    `;
+
+    searchSuggestionsDropdown.innerHTML = html;
+    searchSuggestionsDropdown.classList.remove('hidden');
+
+    document.getElementById('suggestLocalSearch')?.addEventListener('click', () => {
+      searchQuery = query;
+      searchSuggestionsDropdown.classList.add('hidden');
+      loadProducts(true);
+    });
+  }
 
   clearSearchBtn?.addEventListener('click', () => {
     searchInput.value = '';
     searchQuery = '';
     clearSearchBtn.classList.add('hidden');
+    searchSuggestionsDropdown?.classList.add('hidden');
     loadProducts(true);
     searchInput.focus();
     showToast('Ricerca azzerata', '🔄');
@@ -202,12 +321,14 @@ function setupEventListeners() {
   // Search Submit
   searchBtn.addEventListener('click', () => {
     searchQuery = searchInput.value.trim();
+    searchSuggestionsDropdown?.classList.add('hidden');
     loadProducts(true);
   });
 
   searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       searchQuery = searchInput.value.trim();
+      searchSuggestionsDropdown?.classList.add('hidden');
       loadProducts(true);
     }
   });
@@ -231,11 +352,87 @@ function setupEventListeners() {
     loadProducts(false);
   });
 
-  // Modal
+  // Modal Alert
   closeModalBtn.addEventListener('click', () => alertDialog.close());
   alertDialog.addEventListener('click', (e) => {
     if (e.target === alertDialog) alertDialog.close();
   });
+
+  // Amazon Gateway Modal Controls & Converter Tool
+  const amazonGatewayDialog = document.getElementById('amazonGatewayDialog');
+  const openAmazonGatewayBtn = document.getElementById('openAmazonGatewayBtn');
+  const closeAmazonGatewayModalBtn = document.getElementById('closeAmazonGatewayModalBtn');
+  const btnOpenConverterHero = document.getElementById('btnOpenConverterHero');
+
+  function openAmazonGateway() {
+    if (amazonGatewayDialog) {
+      amazonGatewayDialog.showModal();
+    }
+  }
+
+  openAmazonGatewayBtn?.addEventListener('click', openAmazonGateway);
+  btnOpenConverterHero?.addEventListener('click', () => {
+    openAmazonGateway();
+    setTimeout(() => {
+      document.getElementById('converterInput')?.focus();
+    }, 100);
+  });
+  closeAmazonGatewayModalBtn?.addEventListener('click', () => amazonGatewayDialog?.close());
+  amazonGatewayDialog?.addEventListener('click', (e) => {
+    if (e.target === amazonGatewayDialog) amazonGatewayDialog.close();
+  });
+
+  // Link / ASIN Converter Logic
+  const converterBtn = document.getElementById('converterBtn');
+  const converterInput = document.getElementById('converterInput');
+  const converterResult = document.getElementById('converterResult');
+
+  converterBtn?.addEventListener('click', handleConvertLink);
+  converterInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleConvertLink();
+  });
+
+  function handleConvertLink() {
+    const val = converterInput?.value.trim();
+    if (!val) {
+      showToast('Inserisci un link o un codice ASIN Amazon', '⚠️');
+      return;
+    }
+    const asinMatch = val.match(/(?:dp\/|gp\/product\/|asin=|\b)([B0-9][A-Z0-9]{9})\b/i);
+    let targetUrl = '';
+    let description = '';
+
+    if (asinMatch) {
+      const asin = asinMatch[1].toUpperCase();
+      targetUrl = `https://www.amazon.it/dp/${asin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
+      description = `ASIN Rilevato: <strong>${asin}</strong>`;
+    } else {
+      targetUrl = `https://www.amazon.it/s?k=${encodeURIComponent(val)}&tag=${OFFICIAL_ASSOCIATE_TAG}`;
+      description = `Ricerca Amazon per termine: "<strong>${escapeHtml(val)}</strong>"`;
+    }
+
+    if (converterResult) {
+      converterResult.classList.remove('hidden');
+      converterResult.innerHTML = `
+        <div class="converter-result-title">✅ Link Affiliato Ufficiale Generato con Successo!</div>
+        <div style="font-size:0.86rem; margin-bottom:6px; color:#334155;">${description}</div>
+        <div class="converter-result-url">${escapeHtml(targetUrl)}</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+          <a href="${targetUrl}" target="_blank" rel="noopener sponsored" class="btn btn-primary" style="flex:1; justify-content:center; text-decoration:none;">
+            🚀 Apri su Amazon.it (Supporta il Canale) ↗
+          </a>
+          <button type="button" class="btn btn-outline" id="btnCopyGeneratedUrl">
+            📋 Copia Link
+          </button>
+        </div>
+      `;
+      document.getElementById('btnCopyGeneratedUrl')?.addEventListener('click', () => {
+        navigator.clipboard.writeText(targetUrl).then(() => {
+          showToast('Link affiliato copiato negli appunti!', '📋');
+        });
+      });
+    }
+  }
 
   // Legal Modals (Privacy, Termini, Cookie, Contatti)
   const legalDialog = document.getElementById('legalDialog');
@@ -469,10 +666,15 @@ async function loadProducts(reset = true) {
       } else {
         banner.innerHTML = `
           <div class="search-banner-inner">
-            <span>🔎 Risultati radar per "<strong>${escapeHtml(searchQuery)}</strong>". Vuoi caricare tutti i prodotti identici alla ricerca Amazon?</span>
-            <button type="button" class="btn-banner-amazon" id="btnSwitchLiveAmazon" style="border:none; cursor:pointer;" title="Carica risultati live da Amazon">
-              🌐 Mostra Risultati Live Amazon
-            </button>
+            <span>🔎 Risultati radar per "<strong>${escapeHtml(searchQuery)}</strong>" (${filtered.length} sconti trovati). Vuoi confrontare l'intero catalogo Amazon.it in tempo reale?</span>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+              <a href="https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn-banner-amazon" title="Apri ricerca diretta su Amazon con cookie 24h">
+                🛒 Cerca su Amazon.it ↗
+              </a>
+              <button type="button" class="btn-banner-amazon" id="btnSwitchLiveAmazon" style="border:none; cursor:pointer; background:#2563eb;" title="Carica risultati live da Amazon">
+                🌐 Mostra Live API
+              </button>
+            </div>
           </div>
         `;
         setTimeout(() => {
@@ -545,6 +747,30 @@ function renderProducts(products, reset) {
             </div>
             <div class="universal-search-footer">
               ✅ Link di acquisto verificato con accredito commissioni • Tag: <code>${OFFICIAL_ASSOCIATE_TAG}</code>
+            </div>
+          </div>
+        `;
+      } else if (activeFilter === 'live_amazon') {
+        productsGrid.innerHTML = `
+          <div class="universal-search-card">
+            <div class="universal-search-badge">🌐 Tutto Amazon Live</div>
+            <h3 class="universal-search-title">Esplora l'Intero Catalogo di Amazon.it</h3>
+            <p class="universal-search-desc">
+              Digita qualsiasi prodotto o marca nella barra di ricerca in alto per verificare offerte e disponibilità in tempo reale, oppure visita direttamente i reparti ufficiali con il cookie affiliato attivo per 24 ore.
+            </p>
+            <div class="universal-search-actions">
+              <a href="https://www.amazon.it/gp/goldbox?tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-lg">
+                🔥 Offerte del Giorno su Amazon ↗
+              </a>
+              <a href="https://www.amazon.it/warehouse-deals?tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-lg">
+                📦 Amazon Seconda Mano (-20%) ↗
+              </a>
+              <a href="https://www.amazon.it/?tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-lg">
+                🛒 Homepage Amazon.it (Cookie 24h Attivo) ↗
+              </a>
+            </div>
+            <div class="universal-search-footer">
+              ✅ Qualsiasi acquisto completerai nelle prossime 24 ore sosterrà il canale senza costi aggiuntivi per te!
             </div>
           </div>
         `;

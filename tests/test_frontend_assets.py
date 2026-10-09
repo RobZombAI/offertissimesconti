@@ -46,7 +46,9 @@ class TestFrontendAssets(unittest.TestCase):
             "productsGrid", "resultsCount", "categorySelect",
             "discountSelect", "searchInput", "searchBtn",
             "categoryChips", "alertDialog", "alertForm",
-            "targetPriceInput", "contactInput", "chartDialog"
+            "targetPriceInput", "contactInput", "chartDialog",
+            "openAmazonGatewayBtn", "amazonGatewayDialog",
+            "searchSuggestionsDropdown", "converterBtn", "converterInput"
         ]
         for el_id in required_ids:
             self.assertIn(f'id="{el_id}"', content, f"Elemento DOM critico mancante: id='{el_id}'")
@@ -76,6 +78,8 @@ class TestFrontendAssets(unittest.TestCase):
         self.assertIn("/api/track", js)
         self.assertIn("getProductPriceTimeline", js)
         self.assertIn("openPriceChartModal", js)
+        self.assertIn("renderSearchSuggestions", js)
+        self.assertIn("handleConvertLink", js)
         self.assertTrue("generateRadarSparkline" in js or "generateKeepaSparkline" in js, "Manca funzione generatore sparkline radar")
 
     def test_static_json_catalog_and_categories(self):

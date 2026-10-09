@@ -43,6 +43,9 @@
       </nav>
 
       <div class="header-actions">
+        <button id="openAmazonGatewayBtn" class="btn btn-amazon-header" title="Supporta il canale con i tuoi acquisti su Amazon">
+          🛒 Compra su Amazon
+        </button>
         <a href="https://t.me/offertissimesconti_radar_bot" target="_blank" rel="noopener" class="btn btn-telegram">
           <svg class="tg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.52 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06-.01.19-.04.34z"/>
@@ -62,16 +65,30 @@
         Il nostro algoritmo confronta costantemente i prezzi effettivi di Amazon.it con la <strong>media storica degli ultimi 90 giorni</strong>, scovando i veri minimi storici ed eliminando per sempre i finti sconti promozionali.
       </p>
 
-      <!-- Search Bar -->
-      <div class="search-box">
-        <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="text" id="searchInput" placeholder="Cerca tra 3.200+ prodotti reali (es. capsule caffè, COSRX, Pampers, Anker...)" autocomplete="off">
-        <kbd class="search-kbd" title="Scorciatoia tastiera per cercare">/</kbd>
-        <button id="clearSearchBtn" class="clear-search-btn hidden" aria-label="Cancella ricerca" title="Cancella ricerca">&times;</button>
-        <button id="searchBtn" class="btn btn-primary">Cerca Sconti</button>
+      <!-- Search Bar Wrapper with Interactive Live Dropdown -->
+      <div class="search-box-wrapper">
+        <div class="search-box">
+          <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Cerca tra 3.200+ prodotti, incolla link Amazon o cerca su tutto Amazon.it..." autocomplete="off">
+          <kbd class="search-kbd" title="Scorciatoia tastiera per cercare">/</kbd>
+          <button id="clearSearchBtn" class="clear-search-btn hidden" aria-label="Cancella ricerca" title="Cancella ricerca">&times;</button>
+          <button id="searchBtn" class="btn btn-primary">Cerca Sconti</button>
+        </div>
+        <!-- Live Search Suggestions Dropdown -->
+        <div id="searchSuggestionsDropdown" class="search-suggestions-dropdown hidden"></div>
+      </div>
+
+      <!-- Quick Amazon Gateway Shortcuts -->
+      <div class="amazon-quick-shortcuts">
+        <span class="shortcut-label">🌐 Naviga Amazon con Tag (Cookie 24h):</span>
+        <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🔥 Offerte del Giorno</a>
+        <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">📦 Seconda Mano (-20%)</a>
+        <a href="https://www.amazon.it/gp/bestsellers?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🏆 Più Venduti</a>
+        <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🛒 Tutto Amazon.it</a>
+        <button id="btnOpenConverterHero" class="quick-link-pill pill-highlight">✨ Converti Link/ASIN</button>
       </div>
 
       <!-- Quick Category Chips -->
@@ -428,6 +445,111 @@
       </div>
       <div class="modal-body" id="chartModalBody">
         <!-- Generato dinamicamente via JavaScript -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Modal: Amazon Shopping Gateway & Convertitore ASIN -->
+  <dialog id="amazonGatewayDialog" class="modal-dialog">
+    <div class="modal-box modal-box-large">
+      <div class="modal-header">
+        <div>
+          <span class="badge-pill" style="font-size:0.75rem; background:#fef3c7; color:#b45309;">Supporta OffertissimeSconti a Costo Zero</span>
+          <h3 id="amazonGatewayModalTitle" style="margin-top:4px;">🛒 Shopping Gateway Ufficiale Amazon.it</h3>
+        </div>
+        <button id="closeAmazonGatewayModalBtn" class="close-btn" aria-label="Chiudi finestra">&times;</button>
+      </div>
+      <div class="modal-body" id="amazonGatewayModalBody">
+        <div class="gateway-explainer">
+          <p>
+            Stai per comprare qualsiasi articolo su Amazon che non è attualmente presente nel nostro radar sconti? 
+            <strong>Puoi supportare il nostro canale e il nostro lavoro senza spendere un solo centesimo in più!</strong>
+          </p>
+          <div class="cookie-rule-box">
+            <span class="cookie-rule-icon">⏱️</span>
+            <div>
+              <strong>Come funziona la Sessione di Tracciamento Amazon (24 Ore / 89 Giorni):</strong>
+              <p>
+                Nel momento in cui clicchi su uno qualsiasi dei nostri link o converti un prodotto, Amazon attiva sul tuo browser il nostro tag affiliato (<code>offertissimes-21</code>) 
+                per le <strong>successive 24 ore</strong>. Qualsiasi acquisto completerai su Amazon (in qualunque categoria, anche cercando altri prodotti o cambiando decine di pagine) 
+                riconoscerà una piccola commissione al nostro canale. Il prezzo finale per te è <strong>identico al centesimo</strong>. 
+                Inoltre, se aggiungi articoli al carrello, il tracciamento rimane valido fino a <strong>89 giorni</strong>!
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tool: Convertitore Link / ASIN Rapido -->
+        <div class="converter-box">
+          <h4>🔗 Convertitore Rapido Link o ASIN Amazon</h4>
+          <p class="converter-sub">Hai già il link o il codice ASIN del prodotto che vuoi comprare? Incollalo qui sotto:</p>
+          <div class="converter-input-row">
+            <input type="text" id="converterInput" placeholder="Incolla link Amazon (es. amazon.it/dp/B08...) o ASIN (es. B08N5WRWNW)">
+            <button id="converterBtn" class="btn btn-primary">Genera Link Affiliato 🚀</button>
+          </div>
+          <div id="converterResult" class="converter-result hidden"></div>
+        </div>
+
+        <!-- Hub Reparti Amazon -->
+        <h4 style="margin-top: 24px; margin-bottom: 12px; font-size: 1.1rem;">🌐 Esplora i Reparti Ufficiali con Tag Attivo</h4>
+        <div class="departments-grid">
+          <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">🛒</span>
+            <div>
+              <strong>Homepage Amazon.it</strong>
+              <span>Navigazione libera con cookie 24h</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">🔥</span>
+            <div>
+              <strong>Offerte del Giorno & Lampo</strong>
+              <span>Sconti a tempo limitato di oggi</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">📦</span>
+            <div>
+              <strong>Amazon Seconda Mano</strong>
+              <span>Resi garantiti con sconto fino a -20%</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/gp/bestsellers?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">🏆</span>
+            <div>
+              <strong>I Più Venduti (Bestseller)</strong>
+              <span>Classifiche aggiornate in tempo reale</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/s?i=electronics&tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">💻</span>
+            <div>
+              <strong>Elettronica & Informatica</strong>
+              <span>Smartphone, PC, cuffie e smart home</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/s?i=kitchen&tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">🏡</span>
+            <div>
+              <strong>Casa & Cucina</strong>
+              <span>Piccoli elettrodomestici e arredo</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/s?i=beauty&tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">💄</span>
+            <div>
+              <strong>Bellezza & Cura Persona</strong>
+              <span>Skincare, profumi e igiene</span>
+            </div>
+          </a>
+          <a href="https://www.amazon.it/s?i=baby&tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+            <span class="dept-icon">👶</span>
+            <div>
+              <strong>Prima Infanzia & Famiglia</strong>
+              <span>Pannolini, seggiolini e accessori</span>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
   </dialog>
