@@ -135,6 +135,25 @@ class TestApiServerExtended(unittest.TestCase):
             self.assertEqual(results[0]["asin"], "B0CX23VFPW")
             self.assertIn("offertissimes-21", results[0]["affiliate_url"])
 
+    def test_bestsellers_endpoint(self):
+        url = f"{self.base_url}/api/bestsellers?limit=10"
+        with urllib.request.urlopen(url) as res:
+            self.assertEqual(res.status, 200)
+            data = json.loads(res.read().decode("utf-8"))
+            self.assertTrue(data["success"])
+            self.assertEqual(len(data["bestsellers"]), 10)
+            self.assertIn("bsr_rank", data["bestsellers"][0])
+            self.assertIn("est_monthly_sales", data["bestsellers"][0])
+
+    def test_products_bestseller_sort(self):
+        url = f"{self.base_url}/api/products?sort=bestseller&limit=5"
+        with urllib.request.urlopen(url) as res:
+            self.assertEqual(res.status, 200)
+            data = json.loads(res.read().decode("utf-8"))
+            self.assertTrue(data["success"])
+            ranks = [p.get("bsr_rank") for p in data["products"]]
+            self.assertEqual(ranks, sorted(ranks))
+
     def test_run_server_mock(self):
         with patch("api.server.HTTPServer") as mock_http:
             mock_instance = MagicMock()

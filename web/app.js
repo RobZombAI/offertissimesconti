@@ -111,14 +111,26 @@ function setupEventListeners() {
   // Tabs
   filterTabs.forEach(tab => {
     tab.addEventListener('click', () => {
-      filterTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      activeFilter = tab.dataset.filter;
-      loadProducts(true);
+      setActiveTab(tab.dataset.filter);
     });
   });
 
-  // Nav shortcuts
+  // Nav & Hero & Modal shortcuts
+  document.getElementById('nav-bestsellers')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setActiveTab('bestsellers');
+    showToast('Classifica Più Venduti caricata!', '🏆');
+  });
+  document.getElementById('btnHeroBestsellers')?.addEventListener('click', () => {
+    setActiveTab('bestsellers');
+    showToast('Classifica Più Venduti caricata!', '🏆');
+  });
+  document.getElementById('modalDeptBestsellers')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('amazonGatewayDialog')?.close();
+    setActiveTab('bestsellers');
+    showToast('Classifica Più Venduti caricata!', '🏆');
+  });
   document.getElementById('nav-drops')?.addEventListener('click', (e) => {
     e.preventDefault();
     setActiveTab('drops');
@@ -467,8 +479,15 @@ function setActiveTab(filter) {
     else tab.classList.remove('active');
   });
   activeFilter = filter;
+  if (filter === 'bestsellers') {
+    activeSort = 'bestseller';
+    if (sortSelect) sortSelect.value = 'bestseller';
+  } else if (activeSort === 'bestseller') {
+    activeSort = 'drop';
+    if (sortSelect) sortSelect.value = 'drop';
+  }
   loadProducts(true);
-  document.getElementById('offerte').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('offerte')?.scrollIntoView({ behavior: 'smooth' });
 }
 
 async function loadCategories() {
@@ -588,6 +607,30 @@ async function loadProducts(reset = true) {
   const statEl = document.getElementById('statProducts');
   if (statEl) statEl.textContent = catalog.length.toLocaleString('it-IT');
 
+  // Intestazione Dinamica Sezione
+  const mainTitleEl = document.getElementById('sectionMainTitle');
+  const mainDescEl = document.getElementById('sectionMainDesc');
+  if (mainTitleEl && mainDescEl) {
+    if (activeFilter === 'bestsellers') {
+      const catObj = allCategories.find(c => c.macro_category_id === activeCategory);
+      const catName = catObj ? catObj.macro_category_name : 'Tutte le Categorie';
+      mainTitleEl.innerHTML = `🏆 Classifica Più Venduti — ${catName}`;
+      mainDescEl.textContent = 'I prodotti più acquistati e popolari su Amazon.it, ordinati per Best Sellers Rank (BSR) e vendite mensili stimate.';
+    } else if (activeFilter === 'drops') {
+      mainTitleEl.textContent = '📉 Cali di Prezzo Reali Verificati';
+      mainDescEl.textContent = 'Offerte con ribasso reale effettivo rispetto al prezzo di listino e alla media storica.';
+    } else if (activeFilter === 'cyclical') {
+      mainTitleEl.textContent = '🔄 Prodotti per Spesa Ciclica';
+      mainDescEl.textContent = 'Beni di prima necessità e consumabili con intervallo di riacquisto consigliato.';
+    } else if (activeFilter === 'viral') {
+      mainTitleEl.textContent = '⚡ Trend Virali & Prodotti Popolari';
+      mainDescEl.textContent = 'Articoli con alto indice di viralità e forte interesse d\'acquisto.';
+    } else {
+      mainTitleEl.textContent = 'Radar Offerte in Tempo Reale';
+      mainDescEl.textContent = 'Prodotti attualmente al di sotto della loro media di prezzo storica.';
+    }
+  }
+
   // Filtra prodotti in memoria (istantaneo a 60fps)
   let filtered = catalog.filter(p => {
     if (activeCategory && p.macro_category_id !== activeCategory) {
@@ -613,12 +656,21 @@ async function loadProducts(reset = true) {
       if (!p.is_cyclical) return false;
     } else if (activeFilter === 'viral') {
       if ((p.virality_score || 0) < 85) return false;
+    } else if (activeFilter === 'bestsellers') {
+      // Classifica dei più venduti: mostra tutti i prodotti bestseller
     }
     return true;
   });
 
   // Ordinamento
-  if (activeSort === 'price_asc') {
+  if (activeSort === 'bestseller') {
+    filtered.sort((a, b) => {
+      const rankA = a.bsr_rank || 999999;
+      const rankB = b.bsr_rank || 999999;
+      if (rankA !== rankB) return rankA - rankB;
+      return (b.est_monthly_sales || 0) - (a.est_monthly_sales || 0);
+    });
+  } else if (activeSort === 'price_asc') {
     filtered.sort((a, b) => a.current_price - b.current_price);
   } else if (activeSort === 'price_desc') {
     filtered.sort((a, b) => b.current_price - a.current_price);
@@ -627,7 +679,16 @@ async function loadProducts(reset = true) {
   } else if (activeSort === 'cycle') {
     filtered.sort((a, b) => (a.cycle_days || 999) - (b.cycle_days || 999));
   } else {
-    filtered.sort((a, b) => (b.keepa_drop_percent || 0) - (a.keepa_drop_percent || 0));
+    if (activeFilter === 'bestsellers') {
+      filtered.sort((a, b) => {
+        const rankA = a.bsr_rank || 999999;
+        const rankB = b.bsr_rank || 999999;
+        if (rankA !== rankB) return rankA - rankB;
+        return (b.est_monthly_sales || 0) - (a.est_monthly_sales || 0);
+      });
+    } else {
+      filtered.sort((a, b) => (b.keepa_drop_percent || 0) - (a.keepa_drop_percent || 0));
+    }
   }
 
   // Ricerca Live Diretta su Amazon tramite API quando il tab è attivo o se 0 prodotti locali trovati
@@ -696,22 +757,24 @@ async function loadProducts(reset = true) {
   if (reset) {
     const pageSlice = filtered.slice(0, currentLimit);
     currentProducts = pageSlice;
-    renderProducts(pageSlice, true);
+    renderProducts(pageSlice, true, 0);
   } else {
     const pageSlice = filtered.slice(currentOffset, currentOffset + currentLimit);
     currentProducts = currentProducts.concat(pageSlice);
-    renderProducts(pageSlice, false);
+    renderProducts(pageSlice, false, currentOffset);
   }
 
   if (isLiveResults) {
     resultsCount.textContent = `Mostrati ${currentProducts.length} risultati ufficiali da Amazon.it per "${searchQuery || 'offerte'}"`;
+  } else if (activeFilter === 'bestsellers') {
+    resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti in classifica (su ${filtered.length} più venduti)`;
   } else {
     resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti (su ${filtered.length} sconti trovati)`;
   }
   loadMoreBtn.style.display = (currentProducts.length >= filtered.length) ? 'none' : 'inline-flex';
 }
 
-function renderProducts(products, reset) {
+function renderProducts(products, reset, startIndex = 0) {
   if (reset) {
     if (products.length === 0) {
       if (searchQuery) {
@@ -817,7 +880,9 @@ function renderProducts(products, reset) {
       tbody = document.getElementById('productsTableBody');
     }
 
-    products.forEach(p => {
+    products.forEach((p, idx) => {
+      const position = (startIndex || 0) + idx + 1;
+      const isBestsellerMode = activeFilter === 'bestsellers' || activeSort === 'bestseller';
       const tr = document.createElement('tr');
       const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
       const dropBadge = hasRealDiscount 
@@ -829,6 +894,10 @@ function renderProducts(products, reset) {
       const cyclicalBadge = p.is_cyclical 
         ? `<span class="badge-cyclical" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🔄 Ogni ${p.cycle_days}gg</span>` 
         : `<span style="color:#94a3b8; font-size:0.76rem;">Spot</span>`;
+
+      const rankBadge = isBestsellerMode
+        ? `<span class="badge-bestseller-rank ${position === 1 ? 'rank-gold' : position === 2 ? 'rank-silver' : position === 3 ? 'rank-bronze' : 'rank-top'}" style="font-size:0.74rem; padding:2px 8px;">${position === 1 ? '🥇 #1 Più Venduto' : position === 2 ? '🥈 #2 Più Venduto' : position === 3 ? '🥉 #3 Più Venduto' : `🏆 #${position} Classifica`}</span>`
+        : (p.bsr_rank && p.bsr_rank <= 10 ? `<span class="badge-bestseller-rank rank-gold" style="font-size:0.72rem; padding:2px 6px;">🏆 BSR #${p.bsr_rank}</span>` : '');
 
       const imgUrl = p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=120';
 
@@ -844,8 +913,9 @@ function renderProducts(products, reset) {
               ${p.title}
             </a>
           </div>
-          <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code></div>
-          <div style="display:flex; gap:4px; margin-top:2px; flex-wrap:wrap;">
+          <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code> ${p.est_monthly_sales ? `• 🔥 <strong>${(p.est_monthly_sales).toLocaleString('it-IT')}</strong> vendite/mese` : ''}</div>
+          <div style="display:flex; gap:4px; margin-top:3px; flex-wrap:wrap; align-items:center;">
+            ${rankBadge}
             ${liveBadge}
             ${dropBadge}
           </div>
@@ -899,9 +969,19 @@ function renderProducts(products, reset) {
     return;
   }
 
-  products.forEach(p => {
+  products.forEach((p, idx) => {
+    const position = (startIndex || 0) + idx + 1;
     const card = document.createElement('article');
     card.className = 'product-card';
+
+    const isBestsellerMode = activeFilter === 'bestsellers' || activeSort === 'bestseller';
+    const rankBadge = isBestsellerMode
+      ? `<span class="badge-bestseller-rank ${position === 1 ? 'rank-gold' : position === 2 ? 'rank-silver' : position === 3 ? 'rank-bronze' : 'rank-top'}">${position === 1 ? '🥇 #1 Più Venduto' : position === 2 ? '🥈 #2 Più Venduto' : position === 3 ? '🥉 #3 Più Venduto' : (position <= 10 ? `🏆 #${position} in Classifica` : `📈 #${position} Bestseller`)}</span>`
+      : (p.bsr_rank && p.bsr_rank <= 10 ? `<span class="badge-bestseller-rank rank-gold" style="font-size:0.72rem; padding:2px 7px;">🏆 Top 10 Bestseller</span>` : '');
+
+    const salesMetaHtml = (isBestsellerMode || (p.est_monthly_sales && p.est_monthly_sales >= 3000))
+      ? `<div class="bestseller-sales-meta">🔥 Oltre ${(p.est_monthly_sales || 1000).toLocaleString('it-IT')} acquisti/mese • BSR #${p.bsr_rank || position}</div>`
+      : '';
 
     const liveBadge = p.is_live_amazon 
       ? `<span class="badge-live-amazon" style="background:#fef3c7; color:#b45309; font-weight:800; font-size:0.74rem; padding:2px 7px; border-radius:6px; border:1px solid #fde68a;">🌐 Live Amazon</span>` 
@@ -930,8 +1010,9 @@ function renderProducts(products, reset) {
 
     card.innerHTML = `
       <div class="card-top">
-        ${discountBadge}
+        ${isBestsellerMode ? rankBadge : discountBadge}
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+          ${isBestsellerMode && hasRealDiscount ? discountBadge : (!isBestsellerMode && rankBadge ? rankBadge : '')}
           ${liveBadge}
           ${cyclicalBadge}
         </div>
@@ -943,6 +1024,7 @@ function renderProducts(products, reset) {
       </a>
 
       <div class="card-category">${p.macro_category_name} • <strong>${p.brand}</strong></div>
+      ${salesMetaHtml}
       <h3 class="card-title">
         <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" style="color:inherit;" title="${p.title}">
           ${p.title}

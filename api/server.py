@@ -143,6 +143,8 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                     sort_order = "(current_price - all_time_low) ASC, keepa_drop_percent DESC"
                 elif sort_param == "cycle":
                     sort_order = "is_cyclical DESC, cycle_days ASC"
+                elif sort_param == "bestseller":
+                    sort_order = "bsr_rank ASC, est_monthly_sales DESC"
 
                 where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
                 sql = f"""
@@ -179,6 +181,25 @@ class OffertissimeScontiServer(BaseHTTPRequestHandler):
                 """, (limit,))
                 deals = [dict(r) for r in cur.fetchall()]
                 self._send_json(200, {"success": True, "deals": deals})
+
+            elif path == "/api/bestsellers":
+                category = query.get("category", [""])[0]
+                limit = int(query.get("limit", [50])[0])
+                if category:
+                    cur.execute("""
+                        SELECT * FROM products_catalog
+                        WHERE macro_category_id = ?
+                        ORDER BY bsr_rank ASC, est_monthly_sales DESC
+                        LIMIT ?
+                    """, (category, limit))
+                else:
+                    cur.execute("""
+                        SELECT * FROM products_catalog
+                        ORDER BY bsr_rank ASC, est_monthly_sales DESC
+                        LIMIT ?
+                    """, (limit,))
+                bestsellers = [dict(r) for r in cur.fetchall()]
+                self._send_json(200, {"success": True, "bestsellers": bestsellers})
 
             elif path == "/api/stats":
                 cur.execute("""

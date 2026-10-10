@@ -99,5 +99,28 @@ class TestFrontendAssets(unittest.TestCase):
         self.assertTrue(prod_data.get("success"))
         self.assertGreaterEqual(prod_data.get("total", 0), 3200)
 
+    def test_bestsellers_ui_elements(self):
+        index_path = os.path.join(WEB_DIR, "index.html")
+        with open(index_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        self.assertIn('id="btnHeroBestsellers"', html)
+        self.assertIn('id="nav-bestsellers"', html)
+        self.assertIn('id="tabBestsellers"', html)
+        self.assertIn('value="bestseller"', html)
+
+        css_path = os.path.join(WEB_DIR, "style.css")
+        with open(css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+        self.assertIn(".badge-bestseller-rank", css)
+        self.assertIn(".rank-gold", css)
+        self.assertIn(".bestseller-sales-meta", css)
+
+        js_path = os.path.join(WEB_DIR, "app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        self.assertIn("btnHeroBestsellers", js)
+        self.assertIn("nav-bestsellers", js)
+        self.assertIn("bestseller", js)
+
 if __name__ == "__main__":
     unittest.main()
