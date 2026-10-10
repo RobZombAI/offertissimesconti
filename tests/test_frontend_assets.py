@@ -122,5 +122,33 @@ class TestFrontendAssets(unittest.TestCase):
         self.assertIn("nav-bestsellers", js)
         self.assertIn("bestseller", js)
 
+    def test_insite_browser_hub_elements(self):
+        index_path = os.path.join(WEB_DIR, "index.html")
+        with open(index_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        self.assertIn('id="browserHubDialog"', html)
+        self.assertIn('id="btnFloatingBrowser"', html)
+        self.assertIn('id="btnHeroOpenBrowser"', html)
+        self.assertIn('id="nav-browser-hub"', html)
+        self.assertIn('id="browserSearchInput"', html)
+        self.assertIn('id="browserViewport"', html)
+        self.assertIn('id="btnBrowserDirectLaunch"', html)
+
+        css_path = os.path.join(WEB_DIR, "style.css")
+        with open(css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+        self.assertIn(".browser-dialog", css)
+        self.assertIn(".floating-browser-btn", css)
+        self.assertIn(".browser-window", css)
+        self.assertIn(".browser-viewport", css)
+
+        js_path = os.path.join(WEB_DIR, "app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        self.assertIn("openBrowserHub", js)
+        self.assertIn("renderBrowserHomeHub", js)
+        self.assertIn("performBrowserSearch", js)
+        self.assertIn("btnFloatingBrowser", js)
+
 if __name__ == "__main__":
     unittest.main()

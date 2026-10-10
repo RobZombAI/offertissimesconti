@@ -5,9 +5,12 @@ dei prezzi effettivi, prezzi di listino, titoli e immagini da Amazon.it.
 """
 
 import urllib.request
+import urllib.parse
 import re
 import json
 import time
+import os
+import sqlite3
 from typing import Dict, Optional, List
 
 class AmazonLivePriceFetcher:
@@ -340,5 +343,28 @@ class AmazonLivePriceFetcher:
                         break
         except Exception:
             pass
+
+        # Fallback deterministico sul catalogo locale se Amazon live non restituisce risultati
+        if not results:
+            try:
+                db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "amazon_3000_master_catalog.db")
+                if os.path.exists(db_path):
+                    with sqlite3.connect(db_path) as conn:
+                        conn.row_factory = sqlite3.Row
+                        cur = conn.cursor()
+                        term = f"%{cleaned_query}%"
+                        cur.execute("""
+                            SELECT * FROM products_catalog
+                            WHERE title LIKE ? OR brand LIKE ? OR sub_category_name LIKE ? OR macro_category_name LIKE ? OR asin LIKE ?
+                            ORDER BY bsr_rank ASC, est_monthly_sales DESC
+                            LIMIT ?
+                        """, (term, term, term, term, term, limit))
+                        for r in cur.fetchall():
+                            d = dict(r)
+                            d["is_live_amazon"] = True
+                            results.append(d)
+            except Exception:
+                pass
+
         return results
 

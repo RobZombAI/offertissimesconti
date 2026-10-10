@@ -49,6 +49,28 @@ function getCategoryFallbackImage(catId) {
   return CATEGORY_FALLBACKS[catId] || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';
 }
 
+const CATEGORY_ICONS = {
+  'electronics_pc': '💻',
+  'home_kitchen': '🏡',
+  'beauty_care': '💄',
+  'grocery_coffee': '☕',
+  'health_supplements': '💊',
+  'baby_family': '👶',
+  'pets_animals': '🐾',
+  'cleaning_home': '🧼',
+  'fashion_accessories': '👟',
+  'sports_fitness': '🏃',
+  'diy_gardening': '🔨',
+  'books_study': '📚',
+  'toys_games': '🎮',
+  'auto_moto': '🚗',
+  'office_stationery': '📎'
+};
+
+function getCategoryIcon(catId) {
+  return CATEGORY_ICONS[catId] || '🛒';
+}
+
 function showToast(message, icon = '⚡') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
@@ -116,6 +138,23 @@ function setupEventListeners() {
   });
 
   // Nav & Hero & Modal shortcuts
+  document.getElementById('nav-browser-hub')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openBrowserHub();
+    showToast('Navigatore Amazon aperto!', '🧭');
+  });
+  document.getElementById('btnHeroOpenBrowser')?.addEventListener('click', () => {
+    openBrowserHub();
+    showToast('Navigatore Amazon aperto!', '🧭');
+  });
+  document.getElementById('btnFloatingBrowser')?.addEventListener('click', () => {
+    openBrowserHub();
+    showToast('Navigatore Amazon aperto!', '🧭');
+  });
+  document.getElementById('openAmazonGatewayBtn')?.addEventListener('click', () => {
+    openBrowserHub();
+    showToast('Navigatore Amazon aperto!', '🧭');
+  });
   document.getElementById('nav-bestsellers')?.addEventListener('click', (e) => {
     e.preventDefault();
     setActiveTab('bestsellers');
@@ -370,24 +409,76 @@ function setupEventListeners() {
     if (e.target === alertDialog) alertDialog.close();
   });
 
-  // Amazon Gateway Modal Controls & Converter Tool
+  // In-Site Amazon Browser Hub Dialog Controls
+  const browserHubDialog = document.getElementById('browserHubDialog');
+  const closeBrowserModalBtn = document.getElementById('closeBrowserModalBtn');
+  const browserSearchForm = document.getElementById('browserSearchForm');
+  const browserSearchInput = document.getElementById('browserSearchInput');
+  const browserClearBtn = document.getElementById('browserClearBtn');
+  const btnBrowserHome = document.getElementById('btnBrowserHome');
+  const btnBrowserRefresh = document.getElementById('btnBrowserRefresh');
+
+  closeBrowserModalBtn?.addEventListener('click', closeBrowserHub);
+  browserHubDialog?.addEventListener('click', (e) => {
+    if (e.target === browserHubDialog) closeBrowserHub();
+  });
+
+  browserSearchForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = browserSearchInput?.value.trim() || '';
+    if (q) performBrowserSearch(q);
+    else renderBrowserHomeHub();
+  });
+
+  browserSearchInput?.addEventListener('input', () => {
+    const val = browserSearchInput.value.trim();
+    if (val) browserClearBtn?.classList.remove('hidden');
+    else browserClearBtn?.classList.add('hidden');
+  });
+
+  browserClearBtn?.addEventListener('click', () => {
+    if (browserSearchInput) browserSearchInput.value = '';
+    browserClearBtn?.classList.add('hidden');
+    renderBrowserHomeHub();
+    browserSearchInput?.focus();
+  });
+
+  btnBrowserHome?.addEventListener('click', () => {
+    if (browserSearchInput) browserSearchInput.value = '';
+    browserClearBtn?.classList.add('hidden');
+    renderBrowserHomeHub();
+  });
+
+  btnBrowserRefresh?.addEventListener('click', () => {
+    const q = browserSearchInput?.value.trim() || '';
+    if (q) performBrowserSearch(q);
+    else renderBrowserHomeHub();
+  });
+
+  // Bookmarks chips
+  document.querySelectorAll('#browserBookmarksBar .bookmark-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#browserBookmarksBar .bookmark-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      const q = chip.dataset.query || '';
+      if (browserSearchInput) browserSearchInput.value = q;
+      if (q) {
+        browserClearBtn?.classList.remove('hidden');
+        performBrowserSearch(q);
+      } else {
+        browserClearBtn?.classList.add('hidden');
+        renderBrowserHomeHub();
+      }
+    });
+  });
+
+  // Legacy Amazon Gateway Modal Controls & Converter Tool
   const amazonGatewayDialog = document.getElementById('amazonGatewayDialog');
-  const openAmazonGatewayBtn = document.getElementById('openAmazonGatewayBtn');
   const closeAmazonGatewayModalBtn = document.getElementById('closeAmazonGatewayModalBtn');
   const btnOpenConverterHero = document.getElementById('btnOpenConverterHero');
 
-  function openAmazonGateway() {
-    if (amazonGatewayDialog) {
-      amazonGatewayDialog.showModal();
-    }
-  }
-
-  openAmazonGatewayBtn?.addEventListener('click', openAmazonGateway);
   btnOpenConverterHero?.addEventListener('click', () => {
-    openAmazonGateway();
-    setTimeout(() => {
-      document.getElementById('converterInput')?.focus();
-    }, 100);
+    openBrowserHub();
   });
   closeAmazonGatewayModalBtn?.addEventListener('click', () => amazonGatewayDialog?.close());
   amazonGatewayDialog?.addEventListener('click', (e) => {
@@ -1793,4 +1884,364 @@ function openLegalModal(type) {
   body.innerHTML = selected.html;
   dialog.showModal();
 }
+
+// ==========================================================================
+// In-Site Amazon Browser Hub Controller (Mini-Browser & Explorer)
+// ==========================================================================
+let currentBrowserQuery = '';
+
+function openBrowserHub(query = '') {
+  const dialog = document.getElementById('browserHubDialog');
+  if (!dialog) return;
+  dialog.showModal();
+  
+  const input = document.getElementById('browserSearchInput');
+  const clearBtn = document.getElementById('browserClearBtn');
+  
+  if (query) {
+    if (input) input.value = query;
+    if (clearBtn) clearBtn.classList.remove('hidden');
+    performBrowserSearch(query);
+  } else {
+    if (input) input.value = '';
+    if (clearBtn) clearBtn.classList.add('hidden');
+    renderBrowserHomeHub();
+  }
+}
+
+function closeBrowserHub() {
+  const dialog = document.getElementById('browserHubDialog');
+  if (dialog && dialog.open) {
+    dialog.close();
+  }
+}
+
+function renderBrowserHomeHub() {
+  const viewport = document.getElementById('browserViewport');
+  const statusEl = document.getElementById('browserStatusText');
+  const directLaunch = document.getElementById('btnBrowserDirectLaunch');
+  const input = document.getElementById('browserSearchInput');
+  
+  if (input) input.value = '';
+  if (directLaunch) directLaunch.href = `https://www.amazon.it/?tag=${OFFICIAL_ASSOCIATE_TAG}`;
+  if (statusEl) statusEl.textContent = 'Pronto • Navigazione protetta con cookie 24h attivo per tutto Amazon.it';
+
+  // Highlight 'Home Reparti' bookmark chip
+  document.querySelectorAll('#browserBookmarksBar .bookmark-chip').forEach(chip => {
+    if (chip.dataset.query === '') chip.classList.add('active');
+    else chip.classList.remove('active');
+  });
+
+  if (!viewport) return;
+
+  // Build Department Cards from allCategories
+  const categoriesList = (allCategories && allCategories.length > 0) ? allCategories : [
+    { macro_category_id: 'electronics_pc', macro_category_name: 'Elettronica & Informatica', total_skus: 1720, icon: '💻' },
+    { macro_category_id: 'home_kitchen', macro_category_name: 'Casa & Cucina', total_skus: 1715, icon: '🏡' },
+    { macro_category_id: 'beauty_care', macro_category_name: 'Bellezza & Cura Persona', total_skus: 1705, icon: '💄' },
+    { macro_category_id: 'grocery_coffee', macro_category_name: 'Alimentari & Caffè', total_skus: 1690, icon: '☕' },
+    { macro_category_id: 'health_supplements', macro_category_name: 'Salute & Integratori', total_skus: 1710, icon: '💊' },
+    { macro_category_id: 'baby_family', macro_category_name: 'Prima Infanzia & Famiglia', total_skus: 1680, icon: '👶' },
+    { macro_category_id: 'pets_animals', macro_category_name: 'Animali & Pet Care', total_skus: 1695, icon: '🐾' },
+    { macro_category_id: 'cleaning_home', macro_category_name: 'Pulizia & Cura della Casa', total_skus: 1700, icon: '🧼' },
+    { macro_category_id: 'fashion_accessories', macro_category_name: 'Moda & Accessori', total_skus: 1712, icon: '👟' },
+    { macro_category_id: 'sports_fitness', macro_category_name: 'Sport & Outdoor', total_skus: 1708, icon: '🏃' },
+    { macro_category_id: 'diy_gardening', macro_category_name: 'Fai da Te & Giardino', total_skus: 1690, icon: '🔨' },
+    { macro_category_id: 'books_study', macro_category_name: 'Libri, Agende & Studio', total_skus: 1718, icon: '📚' },
+    { macro_category_id: 'toys_games', macro_category_name: 'Giochi & Modellismo', total_skus: 1685, icon: '🎮' },
+    { macro_category_id: 'auto_moto', macro_category_name: 'Auto, Moto & Accessori', total_skus: 1700, icon: '🚗' },
+    { macro_category_id: 'office_stationery', macro_category_name: 'Ufficio & Cartoleria', total_skus: 1695, icon: '📎' }
+  ];
+
+  const deptCardsHtml = categoriesList.map(cat => {
+    const icon = cat.icon || getCategoryIcon(cat.macro_category_id);
+    const searchUrl = `https://www.amazon.it/s?k=${encodeURIComponent(cat.macro_category_name)}&tag=${OFFICIAL_ASSOCIATE_TAG}`;
+    return `
+      <div class="browser-dept-card" data-cat="${escapeHtml(cat.macro_category_name)}">
+        <span class="browser-dept-icon">${icon}</span>
+        <div style="flex:1; min-width:0;">
+          <span class="browser-dept-name">${escapeHtml(cat.macro_category_name)}</span>
+          <span class="browser-dept-meta">${cat.total_skus ? `${cat.total_skus.toLocaleString('it-IT')} prodotti verificati` : 'Migliaia di offerte'}</span>
+        </div>
+        <a href="${searchUrl}" target="_blank" rel="noopener sponsored" class="browser-card-btn" style="padding:4px 8px; font-size:0.74rem;" title="Apri su Amazon con cookie 24h" onclick="event.stopPropagation();">
+          Apri ↗
+        </a>
+      </div>
+    `;
+  }).join('');
+
+  // Top 4 preview products from rawCatalog
+  let featuredProds = [];
+  if (rawCatalog && rawCatalog.length > 0) {
+    featuredProds = rawCatalog.slice(0, 4);
+  }
+
+  const featuredHtml = featuredProds.map(p => {
+    const img = p.image_url || getCategoryFallbackImage(p.macro_category_id);
+    const dropBadge = p.keepa_drop_percent > 0 ? `<span class="badge-discount" style="font-size:0.72rem; padding:2px 6px;">📉 -${p.keepa_drop_percent}% Reale</span>` : '';
+    const buyUrl = formatAffiliateUrl(p.affiliate_url, p.asin);
+    return `
+      <div class="browser-card">
+        <div class="browser-card-top">
+          ${dropBadge}
+          <span class="price-verified-badge" style="font-size:0.68rem; padding:1px 5px;"><span class="verified-dot"></span> Prime</span>
+        </div>
+        <a href="${buyUrl}" target="_blank" rel="noopener sponsored" class="browser-card-img-box">
+          <img src="${img}" alt="${escapeHtml(p.title)}" class="browser-card-img" loading="lazy" onerror="this.src=getCategoryFallbackImage('${p.macro_category_id}')">
+        </a>
+        <span class="browser-card-brand">${escapeHtml(p.brand || 'Amazon Verified')}</span>
+        <h4 class="browser-card-title">${escapeHtml(p.title)}</h4>
+        <div class="browser-card-prices">
+          <span class="browser-card-price">€${p.current_price.toFixed(2)}</span>
+          ${p.list_price > p.current_price ? `<span class="browser-card-old-price">€${p.list_price.toFixed(2)}</span>` : ''}
+        </div>
+        <a href="${buyUrl}" target="_blank" rel="noopener sponsored" class="browser-card-btn">
+          🛒 Acquista su Amazon ↗
+        </a>
+      </div>
+    `;
+  }).join('');
+
+  viewport.innerHTML = `
+    <!-- Hero Banner -->
+    <div class="browser-hub-hero">
+      <div>
+        <h3 class="browser-hub-hero-title">🧭 Navigatore Ufficiale Amazon.it Integrato</h3>
+        <p class="browser-hub-hero-desc">
+          Naviga ed esplora qualsiasi articolo, categoria o offerta direttamente da questa finestra protetta. 
+          Ogni ricerca o prodotto aperto attiva la tua <strong>sessione ufficiale Amazon con tracciamento garantito per 24 ore</strong>, garantendo le migliori promozioni attive e la spedizione Prime.
+        </p>
+      </div>
+      <div class="browser-hub-hero-badge">
+        <span>🛡️ Sessione Ufficiale 24h Attiva</span>
+      </div>
+    </div>
+
+    <!-- Quick ASIN / Link Converter Tool -->
+    <div class="browser-converter-card">
+      <div class="browser-converter-title">
+        <span>✨ Convertitore Rapido Link & ASIN Amazon</span>
+      </div>
+      <p class="browser-converter-desc">
+        Incolla qui qualsiasi link Amazon (es. <code>amazon.it/dp/B0...</code>) o codice ASIN per aprirlo istantaneamente con il tag di sconto ufficiale:
+      </p>
+      <div class="browser-converter-form">
+        <input type="text" id="browserInsiteConverterInput" class="browser-converter-input" placeholder="Incolla link Amazon o codice ASIN (es. B0CX23VFPW)...">
+        <button type="button" class="btn btn-primary" id="btnBrowserInsiteConvert" style="white-space:nowrap;">
+          🚀 Apri Scheda ↗
+        </button>
+      </div>
+    </div>
+
+    <!-- Departments Directory -->
+    <div class="browser-section-title">
+      <span>📂 Esplora per Reparto Amazon.it</span>
+      <span style="font-size:0.78rem; font-weight:600; color:#64748b;">(Clicca su un reparto per vedere le offerte live o aprilo direttamente)</span>
+    </div>
+    <div class="browser-depts-grid">
+      ${deptCardsHtml}
+    </div>
+
+    <!-- Top Featured Deals in Navigator -->
+    <div class="browser-section-title" style="margin-top:20px;">
+      <span>⚡ Top Offerte Verificate nel Navigatore</span>
+    </div>
+    <div class="browser-products-grid">
+      ${featuredHtml}
+    </div>
+  `;
+
+  // Attach click listeners to department cards
+  viewport.querySelectorAll('.browser-dept-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const cat = card.dataset.cat;
+      const input = document.getElementById('browserSearchInput');
+      if (input) input.value = cat;
+      performBrowserSearch(cat);
+    });
+  });
+
+  // Attach click listener to ASIN converter in viewport
+  viewport.querySelector('#btnBrowserInsiteConvert')?.addEventListener('click', () => {
+    const input = viewport.querySelector('#browserInsiteConverterInput');
+    const val = input ? input.value.trim() : '';
+    if (!val) {
+      showToast('Inserisci un link o codice ASIN Amazon', '⚠️');
+      return;
+    }
+    const asinMatch = val.match(/(?:dp\/|gp\/product\/|asin=|\b)([B0-9][A-Z0-9]{9})\b/i);
+    let targetUrl = '';
+    if (asinMatch) {
+      const asin = asinMatch[1].toUpperCase();
+      targetUrl = `https://www.amazon.it/dp/${asin}?th=1&linkCode=ll2&tag=${OFFICIAL_ASSOCIATE_TAG}&ref_=as_li_ss_tl`;
+    } else {
+      targetUrl = `https://www.amazon.it/s?k=${encodeURIComponent(val)}&tag=${OFFICIAL_ASSOCIATE_TAG}`;
+    }
+    window.open(targetUrl, '_blank', 'noopener,sponsored');
+    showToast('Aperto su Amazon.it con sessione 24h protetta!', '🚀');
+  });
+
+  viewport.querySelector('#browserInsiteConverterInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      viewport.querySelector('#btnBrowserInsiteConvert')?.click();
+    }
+  });
+}
+
+async function performBrowserSearch(query) {
+  const viewport = document.getElementById('browserViewport');
+  const statusEl = document.getElementById('browserStatusText');
+  const directLaunch = document.getElementById('btnBrowserDirectLaunch');
+  const clearBtn = document.getElementById('browserClearBtn');
+  
+  if (!viewport || !query) return;
+  currentBrowserQuery = query;
+
+  if (clearBtn) clearBtn.classList.remove('hidden');
+  const encodedQ = encodeURIComponent(query);
+  const taggedSearchUrl = `https://www.amazon.it/s?k=${encodedQ}&tag=${OFFICIAL_ASSOCIATE_TAG}`;
+  if (directLaunch) directLaunch.href = taggedSearchUrl;
+
+  if (statusEl) statusEl.textContent = `Interrogazione Amazon.it in tempo reale per "${query}"...`;
+
+  viewport.innerHTML = `
+    <div style="text-align:center; padding: 60px 20px;">
+      <div style="font-size: 3rem; margin-bottom: 12px;">⚡</div>
+      <h3 style="font-size:1.25rem; font-weight:800; color:#0f172a;">Ricerca Amazon.it in Tempo Reale</h3>
+      <p style="color:#64748b; font-size:0.9rem; margin-top:6px;">Recupero prezzi ufficiali, sconti e disponibilità Prime per "<strong>${escapeHtml(query)}</strong>"...</p>
+    </div>
+  `;
+
+  let results = [];
+
+  // 1. Prova API Live Amazon se backend attivo
+  if (API_BASE) {
+    try {
+      const res = await fetch(`${API_BASE}/api/search_amazon?q=${encodedQ}&limit=16`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.results && data.results.length > 0) {
+          results = data.results;
+        }
+      }
+    } catch (e) {
+      console.warn("API locale search_amazon non raggiungibile, fallback su catalogo locale.");
+    }
+  }
+
+  // 2. Fallback su catalogo locale in memoria (25.523 prodotti verificati)
+  if (results.length === 0 && rawCatalog && rawCatalog.length > 0) {
+    const lower = query.toLowerCase();
+    results = rawCatalog.filter(p =>
+      (p.title || '').toLowerCase().includes(lower) ||
+      (p.brand || '').toLowerCase().includes(lower) ||
+      (p.sub_category_name || '').toLowerCase().includes(lower) ||
+      (p.macro_category_name || '').toLowerCase().includes(lower) ||
+      (p.asin || '').toLowerCase().includes(lower)
+    ).slice(0, 16);
+  }
+
+  if (statusEl) {
+    statusEl.textContent = `Visualizzati ${results.length} prodotti per "${query}" • Sessione 24h protetta (offertissimes-21)`;
+  }
+
+  // Render risultati
+  if (results.length > 0) {
+    const cardsHtml = results.map(p => {
+      const img = p.image_url || getCategoryFallbackImage(p.macro_category_id);
+      const buyUrl = formatAffiliateUrl(p.affiliate_url, p.asin);
+      const dropBadge = p.keepa_drop_percent > 0 
+        ? `<span class="badge-discount" style="font-size:0.72rem; padding:2px 6px;">📉 -${p.keepa_drop_percent}% Reale</span>`
+        : `<span style="font-size:0.72rem; padding:2px 6px; background:#f1f5f9; color:#475569; font-weight:700; border-radius:4px;">Prezzo Ufficiale</span>`;
+      const rankBadge = (p.bsr_rank && p.bsr_rank <= 10) 
+        ? `<span class="badge-bestseller-rank rank-gold" style="font-size:0.7rem; padding:2px 6px;">🏆 BSR #${p.bsr_rank}</span>` 
+        : '';
+      const liveBadge = p.is_live_amazon 
+        ? `<span style="font-size:0.7rem; padding:2px 5px; background:#fef3c7; color:#b45309; font-weight:700; border-radius:4px; border:1px solid #fde68a;">🌐 Live</span>` 
+        : '';
+
+      return `
+        <div class="browser-card">
+          <div class="browser-card-top">
+            ${dropBadge}
+            <div style="display:flex; gap:4px; align-items:center;">
+              ${liveBadge}
+              ${rankBadge}
+            </div>
+          </div>
+          <a href="${buyUrl}" target="_blank" rel="noopener sponsored" class="browser-card-img-box" title="Apri scheda su Amazon con cookie 24h">
+            <img src="${img}" alt="${escapeHtml(p.title)}" class="browser-card-img" loading="lazy" onerror="this.src=getCategoryFallbackImage('${p.macro_category_id}')">
+          </a>
+          <span class="browser-card-brand">${escapeHtml(p.brand || 'Amazon')} • ASIN: <code>${escapeHtml(p.asin)}</code></span>
+          <h4 class="browser-card-title" title="${escapeHtml(p.title)}">
+            <a href="${buyUrl}" target="_blank" rel="noopener sponsored" style="color:inherit;">
+              ${escapeHtml(p.title)}
+            </a>
+          </h4>
+          <div class="browser-card-prices">
+            <span class="browser-card-price">€${p.current_price.toFixed(2)}</span>
+            ${p.list_price > p.current_price ? `<span class="browser-card-old-price">€${p.list_price.toFixed(2)}</span>` : ''}
+            ${p.est_monthly_sales ? `<span style="font-size:0.7rem; font-weight:700; color:#b45309; margin-left:auto;">🔥 ${p.est_monthly_sales.toLocaleString('it-IT')} vendite/m</span>` : ''}
+          </div>
+          <a href="${buyUrl}" target="_blank" rel="noopener sponsored" class="browser-card-btn" title="Acquista al miglior prezzo con garanzia Prime">
+            🛒 Acquista su Amazon ↗
+          </a>
+        </div>
+      `;
+    }).join('');
+
+    viewport.innerHTML = `
+      <div class="browser-results-header">
+        <div>
+          <div class="browser-results-title">
+            🔎 Risultati Navigatore per "<strong>${escapeHtml(query)}</strong>"
+          </div>
+          <div class="browser-results-sub">
+            Trovati ${results.length} prodotti con prezzi verificati. Tutti i link attivano la sessione ufficiale di acquisto protetta per 24 ore.
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <a href="${taggedSearchUrl}" target="_blank" rel="noopener sponsored" class="browser-external-launch">
+            🛒 Apri Ricerca su Amazon.it (Cookie 24h) ↗
+          </a>
+          <a href="${taggedSearchUrl}&pct-off=20-" target="_blank" rel="noopener sponsored" class="btn btn-outline" style="font-size:0.8rem; padding:6px 10px;">
+            🏷️ Sconti -20%+ ↗
+          </a>
+          <a href="${taggedSearchUrl}&rh=p_76%3A490210031" target="_blank" rel="noopener sponsored" class="btn btn-outline" style="font-size:0.8rem; padding:6px 10px;">
+            ⚡ Prime ↗
+          </a>
+        </div>
+      </div>
+      <div class="browser-products-grid">
+        ${cardsHtml}
+      </div>
+    `;
+  } else {
+    // 0 risultati trovati
+    viewport.innerHTML = `
+      <div style="text-align:center; padding: 60px 20px; background:#ffffff; border-radius:12px; border:1px solid #e2e8f0;">
+        <span style="font-size:3rem;">🔍</span>
+        <h3 style="font-size:1.3rem; font-weight:800; color:#0f172a; margin-top:10px;">Nessun prodotto locale trovato per "${escapeHtml(query)}"</h3>
+        <p style="color:#64748b; font-size:0.92rem; max-width:540px; margin:8px auto 20px auto;">
+          Questo termine non è presente nel catalogo precaricato, ma puoi cercarlo e acquistarlo subito su Amazon.it con la nostra sessione di affiliazione protetta 24h e la spedizione rapida Prime:
+        </p>
+        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <a href="${taggedSearchUrl}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-lg">
+            🛒 Cerca "${escapeHtml(query)}" su Amazon.it (Sessione 24h) ↗
+          </a>
+          <a href="https://www.amazon.it/gp/goldbox?tag=${OFFICIAL_ASSOCIATE_TAG}" target="_blank" rel="noopener sponsored" class="btn btn-outline btn-lg">
+            🔥 Offerte del Giorno ↗
+          </a>
+          <button type="button" class="btn btn-outline btn-lg" id="btnBrowserReturnHome">
+            🏠 Torna alla Home Reparti
+          </button>
+        </div>
+      </div>
+    `;
+    viewport.querySelector('#btnBrowserReturnHome')?.addEventListener('click', () => {
+      renderBrowserHomeHub();
+    });
+  }
+}
+
 

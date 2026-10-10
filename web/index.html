@@ -38,14 +38,14 @@
         <a href="#offerte" class="nav-link" id="nav-bestsellers">Più Venduti 🏆</a>
         <a href="#offerte" class="nav-link" id="nav-drops">Cali di Prezzo 📉</a>
         <a href="#ciclici" class="nav-link" id="nav-cyclical">Spesa Ciclica 🔄</a>
-        <a href="#guide" class="nav-link">Guide & Consigli 💡</a>
+        <button type="button" class="nav-link nav-btn-browser" id="nav-browser-hub">🧭 Navigatore Amazon</button>
+        <a href="#guide" class="nav-link">Guide 💡</a>
         <a href="#come-funziona" class="nav-link">Come Funziona</a>
-        <a href="#chi-siamo" class="nav-link">Chi Siamo</a>
       </nav>
 
       <div class="header-actions">
-        <button id="openAmazonGatewayBtn" class="btn btn-amazon-header" title="Cerca su Amazon.it">
-          🛒 Cerca su Amazon
+        <button id="openAmazonGatewayBtn" class="btn btn-amazon-header" title="Apri il Navigatore Amazon In-Site con Cookie 24h">
+          🧭 Navigatore Amazon
         </button>
         <a href="https://t.me/offertissimesconti_radar_bot" target="_blank" rel="noopener" class="btn btn-telegram">
           <svg class="tg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -85,9 +85,10 @@
       <!-- Quick Amazon Shortcuts -->
       <div class="amazon-quick-shortcuts">
         <span class="shortcut-label">🌐 Scorciatoie Amazon.it:</span>
+        <button id="btnHeroOpenBrowser" class="quick-link-pill pill-highlight-browser" title="Apri il Navigatore Amazon In-Site con sessione protetta 24h">🧭 Finestra Navigatore Amazon</button>
+        <button id="btnHeroBestsellers" class="quick-link-pill pill-highlight-bestseller" title="Visualizza la classifica dei più venduti direttamente qui sul sito">🏆 Classifica Più Venduti</button>
         <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🔥 Offerte del Giorno</a>
         <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">📦 Seconda Mano (-20%)</a>
-        <button id="btnHeroBestsellers" class="quick-link-pill pill-highlight-bestseller" title="Visualizza la classifica dei più venduti direttamente qui sul sito">🏆 Classifica Più Venduti</button>
         <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🛒 Tutto Amazon.it</a>
         <button id="btnOpenConverterHero" class="quick-link-pill pill-highlight">✨ Cerca Link / ASIN</button>
       </div>
@@ -543,6 +544,89 @@
       </div>
     </div>
   </dialog>
+
+  <!-- Modal Finestra Navigatore Amazon In-Site (Mini-Browser Hub) -->
+  <dialog id="browserHubDialog" class="browser-dialog" aria-labelledby="browserDialogTitle">
+    <div class="browser-window">
+      <!-- Window Titlebar (macOS / Chrome browser style) -->
+      <div class="browser-titlebar">
+        <div class="browser-window-controls">
+          <button type="button" class="window-dot dot-close" id="closeBrowserModalBtn" aria-label="Chiudi finestra" title="Chiudi finestra"></button>
+          <button type="button" class="window-dot dot-minimize" aria-label="Minimizza" title="Minimizza"></button>
+          <button type="button" class="window-dot dot-maximize" aria-label="Ingrandisci" title="Ingrandisci"></button>
+        </div>
+        <div class="browser-window-title" id="browserDialogTitle">
+          <span class="browser-title-icon">🧭</span>
+          <span class="browser-title-text">OffertissimeSconti — Navigatore Amazon.it In-Site</span>
+        </div>
+        <div class="browser-security-badge" title="Tutti i link e prodotti aperti attivano la sessione di acquisto ufficiale con tracciamento per 24 ore">
+          <span class="security-dot"></span>
+          <span>Sessione 24h Protetta (<code>offertissimes-21</code>)</span>
+        </div>
+      </div>
+
+      <!-- Browser Toolbar / Address Bar -->
+      <div class="browser-toolbar">
+        <div class="browser-nav-buttons">
+          <button type="button" class="browser-nav-btn" id="btnBrowserHome" title="Torna alla Home del Navigatore" aria-label="Home">🏠</button>
+          <button type="button" class="browser-nav-btn" id="btnBrowserRefresh" title="Ricarica ricerca" aria-label="Ricarica">🔄</button>
+        </div>
+
+        <form class="browser-address-bar" id="browserSearchForm" action="#" onsubmit="return false;">
+          <span class="address-lock" title="Sessione Amazon protetta e verificata">🔒</span>
+          <span class="address-prefix">amazon.it/search?q=</span>
+          <input type="text" id="browserSearchInput" class="browser-input" placeholder="Cerca qualsiasi prodotto, marca, ASIN o reparto su Amazon..." autocomplete="off">
+          <button type="button" class="browser-clear-btn hidden" id="browserClearBtn" title="Cancella ricerca" aria-label="Cancella">✕</button>
+          <button type="submit" class="browser-search-submit" id="btnBrowserSearch">
+            <span>Cerca Live</span> ⚡
+          </button>
+        </form>
+
+        <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="browser-external-launch" id="btnBrowserDirectLaunch" title="Apri subito la navigazione libera su Amazon con cookie 24h">
+          <span>Apri su Amazon</span> ↗
+        </a>
+      </div>
+
+      <!-- Browser Bookmarks Bar (Quick Department Shortcuts) -->
+      <div class="browser-bookmarks-bar" id="browserBookmarksBar">
+        <span class="bookmarks-label">⭐ Reparti Rapidi:</span>
+        <button type="button" class="bookmark-chip active" data-query="">🏠 Home Reparti</button>
+        <button type="button" class="bookmark-chip" data-query="bestseller">🏆 Più Venduti</button>
+        <button type="button" class="bookmark-chip" data-query="offerte del giorno">🔥 Offerte del Giorno</button>
+        <button type="button" class="bookmark-chip" data-query="amazon warehouse seconda mano">📦 Seconda Mano (-20%)</button>
+        <button type="button" class="bookmark-chip" data-query="elettronica smartphone pc">💻 Elettronica</button>
+        <button type="button" class="bookmark-chip" data-query="casa e cucina">🏡 Casa & Cucina</button>
+        <button type="button" class="bookmark-chip" data-query="bellezza e cura della persona">💄 Bellezza</button>
+        <button type="button" class="bookmark-chip" data-query="alimentari e bevande">☕ Alimentari</button>
+        <button type="button" class="bookmark-chip" data-query="sport e fitness">🏃 Sport</button>
+        <button type="button" class="bookmark-chip" data-query="libri">📚 Libri</button>
+      </div>
+
+      <!-- Browser Viewport / Content Area -->
+      <div class="browser-viewport" id="browserViewport">
+        <!-- Rendered dynamically by app.js: Home Hub o Risultati Live -->
+      </div>
+
+      <!-- Browser Statusbar -->
+      <div class="browser-statusbar">
+        <div class="statusbar-left">
+          <span class="status-indicator">●</span>
+          <span id="browserStatusText">Pronto • Navigazione protetta con cookie 24h attivo per tutto Amazon.it</span>
+        </div>
+        <div class="statusbar-right">
+          <span>🛡️ Tag: <strong>offertissimes-21</strong></span>
+          <span>⚡ Spedizione Prime Garantita</span>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Floating In-Site Amazon Browser Launcher Button -->
+  <button id="btnFloatingBrowser" class="floating-browser-btn" aria-label="Apri il Navigatore Amazon Integrato" title="Apri il Navigatore Amazon con Sessione Affiliata 24h">
+    <span class="browser-floating-icon">🧭</span>
+    <span class="browser-floating-text">Navigatore Amazon</span>
+    <span class="browser-floating-badge">24h</span>
+  </button>
 
   <!-- Floating Scroll To Top Button -->
   <button id="scrollTopBtn" class="scroll-top-btn" aria-label="Torna all'inizio della pagina" title="Torna in cima">

@@ -154,6 +154,19 @@ class TestApiServerExtended(unittest.TestCase):
             ranks = [p.get("bsr_rank") for p in data["products"]]
             self.assertEqual(ranks, sorted(ranks))
 
+    def test_search_amazon_api_endpoint(self):
+        url = f"{self.base_url}/api/search_amazon?q=lego&limit=3"
+        with urllib.request.urlopen(url) as res:
+            self.assertEqual(res.status, 200)
+            data = json.loads(res.read().decode("utf-8"))
+            self.assertTrue(data["success"])
+            self.assertEqual(data["query"], "lego")
+            self.assertIn("amazon_affiliate_search_url", data)
+            self.assertIn("tag=offertissimes-21", data["amazon_affiliate_search_url"])
+            self.assertGreaterEqual(len(data["results"]), 1)
+            for item in data["results"]:
+                self.assertIn("tag=offertissimes-21", item["affiliate_url"])
+
     def test_run_server_mock(self):
         with patch("api.server.HTTPServer") as mock_http:
             mock_instance = MagicMock()
