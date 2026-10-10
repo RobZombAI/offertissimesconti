@@ -329,15 +329,20 @@ def run_systemic_price_sync(max_workers: int = 28, limit: Optional[int] = None):
                     drop_pct = 0.0
                     net_price_count += 1
             else:
-                # Prodotto attualmente non disponibile o 404: protegge da eventuali prezzi inflazionati (x100)
-                if db_cp >= 50.0 and db_cp == int(db_cp):
-                    db_cp = round(db_cp / 100.0, 2)
-                    if db_lp >= 50.0 and db_lp == int(db_lp):
-                        db_lp = round(db_lp / 100.0, 2)
+                # Prodotto attualmente non disponibile o 404: mantiene i valori precedenti
                 final_cp = db_cp
                 final_lp = db_lp if db_lp >= final_cp else final_cp
                 drop_pct = round(((final_lp - final_cp) / final_lp) * 100, 1) if final_lp > final_cp else 0.0
                 preserved_fallback_count += 1
+
+            # Sanity guard su sconti anomali (> 3.5x)
+            if final_lp > final_cp * 3.5:
+                if 0.30 * final_lp <= final_cp * 100 <= 1.05 * final_lp:
+                    final_cp = round(final_cp * 100, 2)
+                    drop_pct = round(((final_lp - final_cp) / final_lp) * 100, 1) if final_lp > final_cp else 0.0
+                else:
+                    final_lp = final_cp
+                    drop_pct = 0.0
 
             # Ricalcolo coerente di all_time_low, medie 30d/90d e proiezioni
             if db_atl <= 0.49 or db_atl > final_cp or db_atl < final_cp * 0.65:

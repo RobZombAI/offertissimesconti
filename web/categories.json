@@ -5,7 +5,7 @@
       "macro_category_id": "sports_fitness_gear",
       "macro_category_name": "Sport, Fitness e Attrezzatura",
       "total_skus": 2227,
-      "avg_drop": 13.7
+      "avg_drop": 13.5
     },
     {
       "macro_category_id": "grocery_coffee",
@@ -29,7 +29,7 @@
       "macro_category_id": "electronics_gadgets",
       "macro_category_name": "Elettronica, Accessori e Gadget Smart",
       "total_skus": 793,
-      "avg_drop": 8.7
+      "avg_drop": 8.6
     },
     {
       "macro_category_id": "baby_care",
@@ -47,7 +47,7 @@
       "macro_category_id": "diy_tools_garden",
       "macro_category_name": "Fai da Te, Bricolage e Giardinaggio",
       "total_skus": 602,
-      "avg_drop": 11.7
+      "avg_drop": 11.4
     },
     {
       "macro_category_id": "beauty_personal_care",
@@ -65,7 +65,7 @@
       "macro_category_id": "automotive",
       "macro_category_name": "Auto e Moto (Accessori & Manutenzione)",
       "total_skus": 391,
-      "avg_drop": 9.5
+      "avg_drop": 9.3
     },
     {
       "macro_category_id": "toys_hobbies",
@@ -89,7 +89,7 @@
       "macro_category_id": "cleaning_household",
       "macro_category_name": "Cura della Casa e Pulizia",
       "total_skus": 155,
-      "avg_drop": 11.6
+      "avg_drop": 11.2
     }
   ],
   "total": 15
