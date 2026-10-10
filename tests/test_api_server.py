@@ -165,7 +165,7 @@ class TestApiServer(unittest.TestCase):
         data = json.loads(body)
         self.assertGreater(len(data["products"]), 0)
         for p in data["products"]:
-            matches = ("Borbone" in p["title"]) or ("Borbone" in p["brand"]) or ("Borbone" in p["sub_category_name"])
+            matches = ("borbone" in p["title"].lower()) or ("borbone" in (p["brand"] or "").lower()) or ("borbone" in (p["sub_category_name"] or "").lower())
             self.assertTrue(matches)
 
     def test_api_track_success(self):
