@@ -9,7 +9,7 @@ const API_BASE = (window.location.origin.includes('localhost') || window.locatio
 let rawCatalog = [];
 let allCategories = [];
 let currentProducts = [];
-let activeFilter = 'all'; // 'all', 'atl', 'cyclical', 'viral'
+let activeFilter = 'all'; // 'all', 'drops', 'cyclical', 'viral'
 let activeCategory = '';
 let minDiscount = 0;
 let searchQuery = '';
@@ -119,9 +119,9 @@ function setupEventListeners() {
   });
 
   // Nav shortcuts
-  document.getElementById('nav-atl')?.addEventListener('click', (e) => {
+  document.getElementById('nav-drops')?.addEventListener('click', (e) => {
     e.preventDefault();
-    setActiveTab('atl');
+    setActiveTab('drops');
   });
   document.getElementById('nav-cyclical')?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -606,8 +606,9 @@ async function loadProducts(reset = true) {
         return false;
       }
     }
-    if (activeFilter === 'atl') {
-      if (p.current_price > p.all_time_low * 1.02) return false;
+    if (activeFilter === 'drops') {
+      // Filtra esclusivamente i reali cali di prezzo verificati rispetto al listino o storico
+      if (!(p.list_price > p.current_price || (p.keepa_drop_percent || 0) > 0)) return false;
     } else if (activeFilter === 'cyclical') {
       if (!p.is_cyclical) return false;
     } else if (activeFilter === 'viral') {
@@ -621,8 +622,8 @@ async function loadProducts(reset = true) {
     filtered.sort((a, b) => a.current_price - b.current_price);
   } else if (activeSort === 'price_desc') {
     filtered.sort((a, b) => b.current_price - a.current_price);
-  } else if (activeSort === 'atl') {
-    filtered.sort((a, b) => (a.current_price / a.all_time_low) - (b.current_price / b.all_time_low));
+  } else if (activeSort === 'drop_eur') {
+    filtered.sort((a, b) => ((b.list_price || b.current_price) - b.current_price) - ((a.list_price || a.current_price) - a.current_price));
   } else if (activeSort === 'cycle') {
     filtered.sort((a, b) => (a.cycle_days || 999) - (b.cycle_days || 999));
   } else {
@@ -726,7 +727,7 @@ function renderProducts(products, reset) {
             <div class="universal-search-badge">🔍 Ricerca Totale Amazon.it</div>
             <h3 class="universal-search-title">Cerca "<strong>${escapeHtml(searchQuery)}</strong>" su tutto Amazon</h3>
             <p class="universal-search-desc">
-              Questo articolo non è attualmente tra i 3.200 sconti a minimo storico monitorati, 
+              Questo articolo non è attualmente tra i prodotti con calo di prezzo monitorati, 
               ma puoi cercarlo, confrontarlo e acquistarlo subito su Amazon.it con tutte le promozioni attive e la spedizione Prime.
             </p>
             <div class="universal-search-actions">
@@ -803,7 +804,7 @@ function renderProducts(products, reset) {
                 <th>Prodotto & Brand</th>
                 <th>Dipartimento</th>
                 <th>Prezzo Odierno</th>
-                <th>Minimo Storico</th>
+                <th>Prezzo di Listino</th>
                 <th>Sconto Reale</th>
                 <th>Riacquisto Ciclico</th>
                 <th>Azione Rapida</th>
@@ -818,8 +819,10 @@ function renderProducts(products, reset) {
 
     products.forEach(p => {
       const tr = document.createElement('tr');
-      const isAtl = p.current_price <= p.all_time_low;
-      const atlBadge = isAtl ? `<span class="badge-atl" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">🏆 Minimo Storico</span>` : '';
+      const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
+      const dropBadge = hasRealDiscount 
+        ? `<span class="badge-discount" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">📉 -${p.keepa_drop_percent}% Reale</span>` 
+        : '';
       const liveBadge = p.is_live_amazon 
         ? `<span class="badge-live-amazon" style="display:inline-block; font-size:0.72rem; padding:2px 6px; background:#fef3c7; color:#b45309; border-radius:4px; font-weight:700; border:1px solid #fde68a;">🌐 Live Amazon</span>` 
         : '';
@@ -844,7 +847,7 @@ function renderProducts(products, reset) {
           <div class="table-product-sub">Brand: <strong>${p.brand}</strong> • ASIN: <code>${p.asin}</code></div>
           <div style="display:flex; gap:4px; margin-top:2px; flex-wrap:wrap;">
             ${liveBadge}
-            ${atlBadge}
+            ${dropBadge}
           </div>
         </td>
         <td>
@@ -856,7 +859,7 @@ function renderProducts(products, reset) {
           <div class="price-verified-badge" style="font-size:0.68rem; padding:1px 6px; margin-top:2px;"><span class="verified-dot"></span> Amazon.it</div>
         </td>
         <td>
-          <strong style="color:var(--success);">€${p.all_time_low.toFixed(2)}</strong>
+          <strong style="color:#64748b;">€${(p.list_price || p.current_price).toFixed(2)}</strong>
           <div style="font-size:0.74rem; color:#64748b;">Media 30gg: €${p.avg_price_30d.toFixed(2)}</div>
         </td>
         <td>
@@ -869,7 +872,7 @@ function renderProducts(products, reset) {
         </td>
         <td>
           <div class="table-actions">
-            <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy" title="Acquista al minimo su Amazon.it">
+            <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy" title="Acquista al miglior prezzo su Amazon.it">
               🛒 Acquista ↗
             </a>
             <button type="button" class="btn btn-chart-open" data-sku="${p.sku_id}" title="Visualizza grafico storico prezzi reale (1 Anno)">
@@ -900,8 +903,6 @@ function renderProducts(products, reset) {
     const card = document.createElement('article');
     card.className = 'product-card';
 
-    const isAtl = p.current_price <= p.all_time_low;
-    const atlBadge = isAtl ? `<span class="badge-atl">🏆 Minimo Storico</span>` : '';
     const liveBadge = p.is_live_amazon 
       ? `<span class="badge-live-amazon" style="background:#fef3c7; color:#b45309; font-weight:800; font-size:0.74rem; padding:2px 7px; border-radius:6px; border:1px solid #fde68a;">🌐 Live Amazon</span>` 
       : '';
@@ -913,10 +914,8 @@ function renderProducts(products, reset) {
 
     const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
     const discountBadge = hasRealDiscount 
-      ? `<span class="badge-discount">-${p.keepa_drop_percent}% Reale</span>`
-      : (p.all_time_low && p.current_price <= p.all_time_low * 1.01 
-          ? `<span class="badge-discount" style="background:#059669; color:#ffffff;">🏆 Minimo Storico</span>` 
-          : `<span style="background:#f1f5f9; color:#475569; font-weight:700; font-size:0.72rem; padding:2px 7px; border-radius:6px; border:1px solid #e2e8f0;">Prezzo Amazon</span>`);
+      ? `<span class="badge-discount">-${p.keepa_drop_percent}% Calo Reale</span>`
+      : `<span style="background:#f1f5f9; color:#475569; font-weight:700; font-size:0.72rem; padding:2px 7px; border-radius:6px; border:1px solid #e2e8f0;">Prezzo Amazon</span>`;
 
     const pricesSectionHtml = hasRealDiscount
       ? `
@@ -934,7 +933,6 @@ function renderProducts(products, reset) {
         ${discountBadge}
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
           ${liveBadge}
-          ${atlBadge}
           ${cyclicalBadge}
         </div>
       </div>
@@ -955,7 +953,7 @@ function renderProducts(products, reset) {
       <div class="radar-chart-box chart-clickable" data-sku="${p.sku_id}" style="cursor: pointer;" title="Clicca per aprire il grafico dettagliato completo (1 Anno)">
         <div class="chart-header">
           <span>Storico Prezzi Reale (1 Anno)</span>
-          <span style="color: #10b981; font-weight:700;">Minimo: €${p.all_time_low.toFixed(2)}</span>
+          <span style="color: #10b981; font-weight:700;">${p.list_price > p.current_price ? `Listino: €${p.list_price.toFixed(2)}` : `Oggi: €${p.current_price.toFixed(2)}`}</span>
         </div>
         ${sparklineSvg}
       </div>
@@ -967,7 +965,7 @@ function renderProducts(products, reset) {
       <div class="price-avg">Media ultimi 30gg: <strong>€${p.avg_price_30d.toFixed(2)}</strong></div>
 
       <div class="card-actions">
-        <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-card-primary" title="Acquista al prezzo minimo verificato su Amazon.it">
+        <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn btn-buy btn-card-primary" title="Acquista con calo di prezzo verificato su Amazon.it">
           🛒 Acquista su Amazon ↗
         </a>
         <div class="card-secondary-actions">
@@ -1227,7 +1225,7 @@ function openPriceChartModal(skuId, initialRange = '1y') {
     <div class="chart-canvas-box">
       <div class="chart-tooltip-display" id="chartHoverTooltip">
         <span>📈 Passa il cursore sui punti per visualizzare data esatta e prezzo</span>
-        <span>Minimo Storico: €${p.all_time_low.toFixed(2)}</span>
+        <span>Listino Ufficiale: €${(p.list_price || p.current_price).toFixed(2)}</span>
       </div>
 
       <div id="chartSvgWrapper"></div>
@@ -1250,7 +1248,7 @@ function openPriceChartModal(skuId, initialRange = '1y') {
     <!-- Action Buttons -->
     <div class="chart-actions-row">
       <a href="${formatAffiliateUrl(p.affiliate_url, p.asin)}" target="_blank" rel="noopener sponsored" class="btn-chart-modal-buy">
-        🛒 Acquista al Minimo su Amazon ↗
+        🛒 Acquista su Amazon ↗
       </a>
       <div class="chart-modal-sub-actions">
         <button type="button" class="btn-chart-modal-track" id="btnChartTrackModal">
@@ -1315,8 +1313,8 @@ function openPriceChartModal(skuId, initialRange = '1y') {
           <div class="metric-pill-value text-current">€${p.current_price.toFixed(2)}</div>
         </div>
         <div class="metric-pill">
-          <div class="metric-pill-label">Minimo Storico</div>
-          <div class="metric-pill-value text-atl">€${p.all_time_low.toFixed(2)}</div>
+          <div class="metric-pill-label">Prezzo di Listino</div>
+          <div class="metric-pill-value" style="color:#64748b;">€${(p.list_price || p.current_price).toFixed(2)}</div>
         </div>
         <div class="metric-pill">
           <div class="metric-pill-label">${benchmarkLabel}</div>
@@ -1422,9 +1420,9 @@ function openPriceChartModal(skuId, initialRange = '1y') {
           <line x1="${padL}" y1="${benchY}" x2="${width - padR}" y2="${benchY}" stroke="#3b82f6" stroke-width="1.5" stroke-dasharray="4,3" />
           <text x="${width - padR}" y="${benchY - 5}" font-size="10" fill="#3b82f6" font-weight="600" text-anchor="end">${benchmarkLabel}: €${benchmarkPrice.toFixed(2)}</text>
 
-          <!-- Minimo Storico Line -->
+          <!-- Miglior Prezzo Rilevato Line -->
           <line x1="${padL}" y1="${atlY}" x2="${width - padR}" y2="${atlY}" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" />
-          <text x="${padL + 6}" y="${atlY - 5}" font-size="10" fill="#10b981" font-weight="700">🏆 Minimo Storico: €${p.all_time_low.toFixed(2)}</text>
+          <text x="${padL + 6}" y="${atlY - 5}" font-size="10" fill="#10b981" font-weight="700">📉 Miglior Prezzo Registrato: €${p.all_time_low.toFixed(2)}</text>
 
           <!-- Shaded Area -->
           <polygon fill="url(#largeModalGrad)" points="${areaStr}" />
@@ -1454,7 +1452,7 @@ function openPriceChartModal(skuId, initialRange = '1y') {
       legendContainer.innerHTML = `
         <div class="legend-item"><span class="legend-dot" style="background:#2563eb;"></span> Andamento Prezzo Reale</div>
         <div class="legend-item"><span class="legend-dot" style="background:#3b82f6; border: 1px dashed;"></span> ${benchmarkLabel} (€${benchmarkPrice.toFixed(2)})</div>
-        <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Minimo Storico Assoluto (€${p.all_time_low.toFixed(2)})</div>
+        <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Miglior Prezzo Registrato (€${p.all_time_low.toFixed(2)})</div>
         <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> Offerta Odierna (€${p.current_price.toFixed(2)})</div>
       `;
     }
@@ -1487,7 +1485,7 @@ function openPriceChartModal(skuId, initialRange = '1y') {
         });
         node.addEventListener('mouseleave', (e) => {
           e.target.setAttribute('r', e.target.dataset.date.includes('Oggi') ? '6.5' : '4.5');
-          hoverDisplay.innerHTML = `<span>📈 Passa il cursore sui punti per visualizzare data esatta e prezzo</span> <span>Minimo Storico: €${p.all_time_low.toFixed(2)}</span>`;
+          hoverDisplay.innerHTML = `<span>📈 Passa il cursore sui punti per visualizzare data esatta e prezzo</span> <span>Miglior Prezzo: €${p.all_time_low.toFixed(2)}</span>`;
         });
       });
     }
@@ -1552,7 +1550,7 @@ function openAlertModal(sku, name, price, atl) {
   if (atlBtn) {
     atlBtn.onclick = () => {
       inputEl.value = parseFloat(atl).toFixed(2);
-      showToast(`Prezzo impostato al Minimo Storico (€${inputEl.value})`, '🏆');
+      showToast(`Prezzo impostato al Miglior Prezzo (€${inputEl.value})`, '📉');
     };
   }
   

@@ -5,13 +5,13 @@
       "macro_category_id": "sports_fitness_gear",
       "macro_category_name": "Sport, Fitness e Attrezzatura",
       "total_skus": 2590,
-      "avg_drop": 4.9
+      "avg_drop": 4.8
     },
     {
       "macro_category_id": "grocery_coffee",
       "macro_category_name": "Alimentari, Caffè e Bevande",
       "total_skus": 1743,
-      "avg_drop": 4.0
+      "avg_drop": 3.9
     },
     {
       "macro_category_id": "home_kitchen",
@@ -35,7 +35,7 @@
       "macro_category_id": "baby_care",
       "macro_category_name": "Prima Infanzia e Maternità",
       "total_skus": 1325,
-      "avg_drop": 2.9
+      "avg_drop": 2.8
     },
     {
       "macro_category_id": "health_supplements",
@@ -77,7 +77,7 @@
       "macro_category_id": "toys_hobbies",
       "macro_category_name": "Giochi, Hobbies e Tempo Libero",
       "total_skus": 1059,
-      "avg_drop": 1.5
+      "avg_drop": 1.4
     },
     {
       "macro_category_id": "apparel_basics",
