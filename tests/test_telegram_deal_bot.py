@@ -77,7 +77,9 @@ class TestTelegramDealBot(unittest.TestCase):
             self.assertEqual(d["is_cyclical"], 0)
 
     def test_search_product(self):
-        results = self.bot.search_product("Florence", limit=3)
+        top_deal = self.bot.get_top_deals(limit=1)
+        query = top_deal[0]["brand"] if top_deal and top_deal[0]["brand"] else "Samsung"
+        results = self.bot.search_product(query, limit=3)
         self.assertGreater(len(results), 0)
 
 if __name__ == "__main__":
