@@ -4,92 +4,92 @@
     {
       "macro_category_id": "sports_fitness_gear",
       "macro_category_name": "Sport, Fitness e Attrezzatura",
-      "total_skus": 2227,
-      "avg_drop": 13.5
+      "total_skus": 2590,
+      "avg_drop": 11.6
     },
     {
       "macro_category_id": "grocery_coffee",
       "macro_category_name": "Alimentari, Caffè e Bevande",
-      "total_skus": 1222,
-      "avg_drop": 9.7
+      "total_skus": 1743,
+      "avg_drop": 6.8
     },
     {
       "macro_category_id": "home_kitchen",
       "macro_category_name": "Casa, Cucina ed Elettrodomestici",
-      "total_skus": 914,
-      "avg_drop": 9.8
-    },
-    {
-      "macro_category_id": "books_planners",
-      "macro_category_name": "Libri, Agende e Self-Help",
-      "total_skus": 840,
-      "avg_drop": 13.9
+      "total_skus": 1414,
+      "avg_drop": 6.4
     },
     {
       "macro_category_id": "electronics_gadgets",
       "macro_category_name": "Elettronica, Accessori e Gadget Smart",
-      "total_skus": 793,
-      "avg_drop": 8.6
+      "total_skus": 1393,
+      "avg_drop": 6.9
+    },
+    {
+      "macro_category_id": "books_planners",
+      "macro_category_name": "Libri, Agende e Self-Help",
+      "total_skus": 1390,
+      "avg_drop": 9.6
     },
     {
       "macro_category_id": "baby_care",
       "macro_category_name": "Prima Infanzia e Maternità",
-      "total_skus": 675,
-      "avg_drop": 6.1
+      "total_skus": 1325,
+      "avg_drop": 4.0
     },
     {
       "macro_category_id": "health_supplements",
       "macro_category_name": "Salute, Igiene e Integratori",
-      "total_skus": 670,
-      "avg_drop": 9.4
+      "total_skus": 1320,
+      "avg_drop": 7.7
     },
     {
       "macro_category_id": "diy_tools_garden",
       "macro_category_name": "Fai da Te, Bricolage e Giardinaggio",
-      "total_skus": 602,
-      "avg_drop": 11.4
+      "total_skus": 1252,
+      "avg_drop": 6.3
     },
     {
       "macro_category_id": "beauty_personal_care",
       "macro_category_name": "Bellezza e Cura della Persona",
-      "total_skus": 523,
-      "avg_drop": 10.2
+      "total_skus": 1223,
+      "avg_drop": 8.0
     },
     {
       "macro_category_id": "pet_supplies",
       "macro_category_name": "Animali Domestici (Pet Care)",
-      "total_skus": 518,
-      "avg_drop": 5.2
+      "total_skus": 1218,
+      "avg_drop": 3.1
     },
     {
       "macro_category_id": "automotive",
       "macro_category_name": "Auto e Moto (Accessori & Manutenzione)",
-      "total_skus": 391,
-      "avg_drop": 9.3
-    },
-    {
-      "macro_category_id": "toys_hobbies",
-      "macro_category_name": "Giochi, Hobbies e Tempo Libero",
-      "total_skus": 256,
-      "avg_drop": 9.7
-    },
-    {
-      "macro_category_id": "apparel_basics",
-      "macro_category_name": "Abbigliamento Base e Calzetteria",
-      "total_skus": 255,
-      "avg_drop": 13.2
-    },
-    {
-      "macro_category_id": "office_stationery",
-      "macro_category_name": "Cancelleria, Ufficio e Spedizioni",
-      "total_skus": 192,
-      "avg_drop": 9.9
+      "total_skus": 1141,
+      "avg_drop": 3.5
     },
     {
       "macro_category_id": "cleaning_household",
       "macro_category_name": "Cura della Casa e Pulizia",
-      "total_skus": 155,
-      "avg_drop": 11.2
+      "total_skus": 1062,
+      "avg_drop": 1.6
+    },
+    {
+      "macro_category_id": "toys_hobbies",
+      "macro_category_name": "Giochi, Hobbies e Tempo Libero",
+      "total_skus": 1059,
+      "avg_drop": 2.3
+    },
+    {
+      "macro_category_id": "apparel_basics",
+      "macro_category_name": "Abbigliamento Base e Calzetteria",
+      "total_skus": 1055,
+      "avg_drop": 3.6
+    },
+    {
+      "macro_category_id": "office_stationery",
+      "macro_category_name": "Cancelleria, Ufficio e Spedizioni",
+      "total_skus": 1048,
+      "avg_drop": 1.8
     }
   ],
   "total": 15
