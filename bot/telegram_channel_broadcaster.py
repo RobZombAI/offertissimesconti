@@ -185,14 +185,10 @@ class TelegramChannelBroadcaster:
         is_cyclical = deal.get("is_cyclical", 0)
 
         is_fresh = bool(deal.get("is_fresh_drop"))
-        if is_fresh and is_atl:
-            badge_header = "⚡ <b>RIBASSO FLASH RILEVATO ADESSO!</b>\n🏆 <b>NUOVO MINIMO STORICO ASSOLUTO!</b>"
-        elif is_fresh:
-            badge_header = f"⚡ <b>NUOVO RIBASSO FLASH RILEVATO!</b> (-{drop:.0f}%)"
-        elif is_atl:
-            badge_header = "🏆 <b>NUOVO MINIMO STORICO ASSOLUTO!</b>"
+        if is_fresh:
+            badge_header = f"⚡ <b>NUOVO CALO DI PREZZO REALE RILEVATO!</b> (-{drop:.0f}%)"
         else:
-            badge_header = f"🔥 <b>SUPER SCONTO DEL {drop:.0f}%!</b>"
+            badge_header = f"📉 <b>CALO DI PREZZO REALE AMAZON (-{drop:.0f}%)!</b>"
         cyclical_line = f"🔄 <i>Consumabile: ciclo riacquisto ~{deal.get('cycle_days', 30)}gg</i>\n" if is_cyclical else ""
 
         html = (
@@ -202,7 +198,6 @@ class TelegramChannelBroadcaster:
             f"{cyclical_line}"
             f"💰 <b>Prezzo Offerta: €{curr_price:.2f}</b>\n"
             f"❌ Prezzo Consigliato: <s>€{list_price:.2f}</s>\n"
-            f"📉 Minimo Storico: €{atl:.2f}\n"
             f"💸 <b>Risparmio Reale: €{savings:.2f} (-{drop:.0f}%)</b>\n\n"
             f"📊 <code>[Media 30gg: €{deal.get('avg_price_30d', list_price):.2f} ──📉── Oggi: €{curr_price:.2f}]</code>\n\n"
             f"⚡ <i>Offerta a tempo, scorte limitate. In qualità di Affiliato Amazon io ricevo un guadagno dagli acquisti idonei.</i>"

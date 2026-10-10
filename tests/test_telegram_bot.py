@@ -26,7 +26,7 @@ class TestTelegramBotRunner(unittest.TestCase):
         self.assertIn("inline_keyboard", kb)
         buttons = [btn["text"] for row in kb["inline_keyboard"] for btn in row]
         self.assertTrue(any("Top Offerte" in b for b in buttons))
-        self.assertTrue(any("Minimi Storici" in b for b in buttons))
+        self.assertTrue(any("Cali di Prezzo" in b or "Minimi Storici" in b for b in buttons))
         self.assertTrue(any("Spesa Ciclica" in b for b in buttons))
         self.assertTrue(any("I Miei Prodotti Seguiti" in b for b in buttons))
 

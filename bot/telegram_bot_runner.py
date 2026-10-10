@@ -177,11 +177,11 @@ class OffertissimeScontiTelegramBot:
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
-        if filter_type == "minimi":
+        if filter_type in ("minimi", "drops"):
             cur.execute("""
                 SELECT * FROM products_catalog
-                WHERE current_price <= all_time_low * 1.01
-                ORDER BY keepa_drop_percent DESC
+                WHERE list_price > current_price AND keepa_drop_percent > 0
+                ORDER BY keepa_drop_percent DESC, (list_price - current_price) DESC
                 LIMIT ?
             """, (limit,))
         elif filter_type == "ciclici":
@@ -488,7 +488,7 @@ class OffertissimeScontiTelegramBot:
             "📥 <b>EXPORT COMPLETO LINK AFFILIAZIONE (PostTap & Creator)</b>\n\n"
             "Ecco il file CSV con tutti i <b>3.396 prodotti</b> dell'indagine:\n"
             "• Titoli, brand, categorie e ASIN\n"
-            "• Prezzi attuali, listino e minimi storici verificati\n"
+            "• Prezzi attuali, listino e cali di prezzo verificati\n"
             "• Tutti i link diretti con tag: <code>offertissimes-21</code>\n\n"
             "Pronto per il caricamento su PostTap o fogli Excel/Sheets!\n"
             "🌐 Link web: https://robzombai.github.io/offertissimesconti/offertissimesconti_posttap_export.csv"
@@ -502,7 +502,7 @@ class OffertissimeScontiTelegramBot:
             "inline_keyboard": [
                 [
                     {"text": "🔥 Top Offerte Oggi", "callback_data": "menu_deals"},
-                    {"text": "🏆 Minimi Storici", "callback_data": "menu_minimi"}
+                    {"text": "📉 Cali di Prezzo Reali", "callback_data": "menu_drops"}
                 ],
                 [
                     {"text": "📂 Esplora per Categoria", "callback_data": "menu_categories"},
@@ -542,7 +542,7 @@ class OffertissimeScontiTelegramBot:
             welcome_text = (
                 f"👋 Ciao <b>{first_name}</b>, benvenuto su <b>OFFERTISSIMESCONTI</b>! ⚡\n\n"
                 f"Siamo il tuo radar intelligente per gli acquisti su Amazon. "
-                f"Monitoriamo oltre <b>3.380 prodotti reali</b> ed eliminiamo i finti sconti grazie al nostro algoritmo di tracciamento continuo dei minimi storici.\n\n"
+                f"Monitoriamo oltre <b>20.000 prodotti reali</b> ed eliminiamo i finti sconti grazie al nostro algoritmo di tracciamento continuo dei cali di prezzo reali.\n\n"
                 f"💡 <b>Cosa puoi fare:</b>\n"
                 f"• Clicca i pulsanti in basso per esplorare le offerte del momento\n"
                 f"• Clicca su <b>📋 I Miei Prodotti Seguiti</b> per vedere i tuoi alert attivi\n"
@@ -563,8 +563,8 @@ class OffertissimeScontiTelegramBot:
         elif text.startswith("/deals") or text.startswith("/offerte"):
             self.send_deals_list(chat_id, "deals")
 
-        elif text.startswith("/minimi"):
-            self.send_deals_list(chat_id, "minimi")
+        elif text.startswith("/drops") or text.startswith("/cali") or text.startswith("/minimi"):
+            self.send_deals_list(chat_id, "drops")
 
         elif text.startswith("/ciclici"):
             self.send_deals_list(chat_id, "ciclici")
@@ -760,7 +760,7 @@ class OffertissimeScontiTelegramBot:
             f"🎯 <b>IMPOSTA ALLARME PREZZO SUL PRODOTTO</b>\n\n"
             f"📦 <b>{p_dict['title']}</b>\n"
             f"💰 Prezzo Attuale: <b>€{curr:.2f}</b>\n"
-            f"📉 Minimo Storico: €{atl:.2f}\n\n"
+            f"❌ Prezzo di Listino: <s>€{p_dict.get('list_price', curr):.2f}</s>\n\n"
             f"Tocca una delle opzioni rapide per ricevere un messaggio istantaneo "
             f"appena il prezzo scende, oppure invia <code>/track {p_dict['sku_id']} &lt;prezzo&gt;</code>:"
         )
@@ -774,7 +774,7 @@ class OffertissimeScontiTelegramBot:
         ]
         if atl < curr:
             buttons.append([
-                {"text": f"🏆 Al Minimo Storico (€{atl:.2f})", "callback_data": f"track_{p_dict['sku_id']}_{atl}"}
+                {"text": f"📉 Al Miglior Prezzo (€{atl:.2f})", "callback_data": f"track_{p_dict['sku_id']}_{atl}"}
             ])
         buttons.append([
             {"text": "🛒 Acquista su Amazon", "url": p_dict["affiliate_url"]}
@@ -803,9 +803,9 @@ class OffertissimeScontiTelegramBot:
         if data == "menu_deals":
             self.answer_callback_query(cb_id, "Caricamento offerte...")
             self.send_deals_list(chat_id, "deals")
-        elif data == "menu_minimi":
-            self.answer_callback_query(cb_id, "Caricamento minimi storici...")
-            self.send_deals_list(chat_id, "minimi")
+        elif data in ("menu_minimi", "menu_drops"):
+            self.answer_callback_query(cb_id, "Caricamento cali di prezzo...")
+            self.send_deals_list(chat_id, "drops")
         elif data == "menu_categories":
             self.answer_callback_query(cb_id, "Caricamento categorie...")
             self.send_message(chat_id, "📂 <b>SELEZIONA UNA CATEGORIA:</b>\nScegli un dipartimento per visualizzare la lista intelligente delle migliori offerte attive:", reply_markup=self.get_categories_keyboard())
@@ -866,7 +866,7 @@ class OffertissimeScontiTelegramBot:
                 f"📦 <b>{item['title']}</b>\n"
                 f"🎯 Tuo Target: <b>€{item['target_price']:.2f}</b>\n"
                 f"💰 Prezzo Attuale: <b>€{item['current_price']:.2f}</b> (-{item['keepa_drop_percent']}%)\n"
-                f"📉 Minimo Storico: €{item['all_time_low']:.2f}\n"
+                f"❌ Prezzo di Listino: <s>€{item.get('list_price', item['current_price']):.2f}</s>\n"
                 f"📊 Stato: {status_text}\n"
             )
             keyboard = {
@@ -882,7 +882,8 @@ class OffertissimeScontiTelegramBot:
         deals = self.get_deals(filter_type, limit=3)
         title_map = {
             "deals": "🔥 <b>TOP SCONTI RECORD DEL MOMENTO:</b>",
-            "minimi": "🏆 <b>PRODOTTI AL MINIMO STORICO ASSOLUTO:</b>",
+            "drops": "📉 <b>CALI DI PREZZO REALI AMAZON:</b>",
+            "minimi": "📉 <b>CALI DI PREZZO REALI AMAZON:</b>",
             "ciclici": "🔄 <b>CONSUMABILI & SPESA CICLICA IN SCONTO:</b>"
         }
         self.send_message(chat_id, title_map.get(filter_type, "Ecco le offerte:"))
@@ -905,7 +906,7 @@ class OffertissimeScontiTelegramBot:
                 f"🚀 <b>RADAR OFFERTISSIMESCONTI COLLEGATO CON SUCCESSO!</b>\n\n"
                 f"Canale: <b>{title}</b> ({handle})\n\n"
                 f"Questo canale è ora configurato e operativo per ricevere automaticamente "
-                f"le migliori offerte Amazon reali e minimi storici ogni 10 minuti!\n\n"
+                f"le migliori offerte Amazon e i cali di prezzo reali ogni 10 minuti!\n\n"
                 f"Tutti i link includono deeplinking e tracciamento affiliato verificato."
             )
             self.send_message(channel_id, welcome)

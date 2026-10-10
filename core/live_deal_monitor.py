@@ -144,17 +144,16 @@ class LiveDealMonitor:
             atl = alert["all_time_low"]
             aff_url = alert["affiliate_url"]
 
-            is_atl = curr <= atl
-            atl_badge = "🏆 <b>NUOVO MINIMO STORICO ASSOLUTO!</b>\n" if is_atl else ""
-            discount_pct = round(((list_p - curr) / list_p) * 100, 1)
+            discount_pct = round(((list_p - curr) / list_p) * 100, 1) if list_p and list_p > curr else 0
+            drop_badge = f"📉 <b>CALO DI PREZZO REALE RILEVATO!</b> (-{discount_pct:.0f}%)\n" if discount_pct > 0 else ""
 
             message = (
-                f"🚨 <b>ALLARME PREZZO SOTTOSOGLIA!</b> ⚡\n\n"
-                f"Il prodotto che stavi seguendo è appena sceso al prezzo desiderato!\n\n"
+                f"🚨 <b>ALLARME CALO DI PREZZO RILEVATO!</b> ⚡\n\n"
+                f"Il prodotto che stavi seguendo ha appena registrato un calo di prezzo ed è sceso sotto la tua soglia!\n\n"
                 f"📦 <b>{title}</b>\n"
-                f"{atl_badge}\n"
+                f"{drop_badge}\n"
                 f"🎯 Il tuo target: <b>€{target:.2f}</b>\n"
-                f"💰 <b>Prezzo Attuale: €{curr:.2f}</b> (-{discount_pct}% da listino)\n"
+                f"💰 <b>Prezzo Attuale: €{curr:.2f}</b> (-{discount_pct:.0f}% da listino)\n"
                 f"❌ Prezzo di Listino: <s>€{list_p:.2f}</s>\n\n"
                 f"⏱ <i>Attenzione: i ribassi su Amazon possono durare poche ore per esaurimento scorte!</i>"
             )

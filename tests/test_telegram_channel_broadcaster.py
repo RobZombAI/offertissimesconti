@@ -57,7 +57,7 @@ class TestTelegramChannelBroadcaster(unittest.TestCase):
             "image_url": "https://m.media-amazon.com/images/I/test.jpg"
         }
         caption, keyboard = self.broadcaster.format_channel_post(sample_deal)
-        self.assertIn("MINIMO STORICO ASSOLUTO", caption)
+        self.assertIn("CALO DI PREZZO REALE", caption)
         self.assertIn("€29.99", caption)
         self.assertIn("€59.99", caption)
         self.assertIn("Risparmio Reale: €30.00 (-50%)", caption)
