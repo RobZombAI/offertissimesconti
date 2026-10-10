@@ -35,6 +35,7 @@
 
       <nav class="nav-menu" aria-label="Navigazione Principale">
         <a href="#offerte" class="nav-link active">Offerte del Giorno</a>
+        <a href="#offerte" class="nav-link" id="nav-bestsellers">Più Venduti 🏆</a>
         <a href="#offerte" class="nav-link" id="nav-drops">Cali di Prezzo 📉</a>
         <a href="#ciclici" class="nav-link" id="nav-cyclical">Spesa Ciclica 🔄</a>
         <a href="#guide" class="nav-link">Guide & Consigli 💡</a>
@@ -86,7 +87,7 @@
         <span class="shortcut-label">🌐 Scorciatoie Amazon.it:</span>
         <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🔥 Offerte del Giorno</a>
         <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">📦 Seconda Mano (-20%)</a>
-        <a href="https://www.amazon.it/gp/bestsellers?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🏆 Più Venduti</a>
+        <button id="btnHeroBestsellers" class="quick-link-pill pill-highlight-bestseller" title="Visualizza la classifica dei più venduti direttamente qui sul sito">🏆 Classifica Più Venduti</button>
         <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🛒 Tutto Amazon.it</a>
         <button id="btnOpenConverterHero" class="quick-link-pill pill-highlight">✨ Cerca Link / ASIN</button>
       </div>
@@ -124,14 +125,15 @@
   <main class="main-content container" id="offerte">
     <div class="section-header">
       <div>
-        <h2 class="section-title">Radar Offerte in Tempo Reale</h2>
-        <p class="section-desc">Prodotti attualmente al di sotto della loro media di prezzo storica.</p>
+        <h2 class="section-title" id="sectionMainTitle">Radar Offerte in Tempo Reale</h2>
+        <p class="section-desc" id="sectionMainDesc">Prodotti attualmente al di sotto della loro media di prezzo storica.</p>
       </div>
 
       <!-- Filters & Tabs -->
       <div class="filters-toolbar">
         <div class="filter-tabs">
           <button class="tab-btn active" data-filter="all">Tutte le Offerte</button>
+          <button class="tab-btn" data-filter="bestsellers" id="tabBestsellers" title="Classifica ufficiale dei prodotti più venduti su Amazon.it">🏆 Classifica Più Venduti</button>
           <button class="tab-btn" data-filter="drops">📉 Cali di Prezzo Reali</button>
           <button class="tab-btn" data-filter="cyclical">🔄 Spesa Ciclica</button>
           <button class="tab-btn" data-filter="viral">⚡ Trend Virali</button>
@@ -152,6 +154,7 @@
 
           <select id="sortSelect" aria-label="Ordinamento">
             <option value="drop">Ordina: Maggior Sconto %</option>
+            <option value="bestseller">Ordina: Più Venduti (Classifica BSR)</option>
             <option value="price_asc">Ordina: Prezzo Minore (€)</option>
             <option value="price_desc">Ordina: Prezzo Maggiore (€)</option>
             <option value="drop_eur">Ordina: Massimo Risparmio (€)</option>
@@ -501,11 +504,11 @@
               <span>Resi garantiti con sconto fino a -20%</span>
             </div>
           </a>
-          <a href="https://www.amazon.it/gp/bestsellers?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+          <a href="#offerte" class="dept-card" id="modalDeptBestsellers">
             <span class="dept-icon">🏆</span>
             <div>
-              <strong>I Più Venduti (Bestseller)</strong>
-              <span>Classifiche aggiornate in tempo reale</span>
+              <strong>Classifica Più Venduti (Bestseller)</strong>
+              <span>Visualizza la classifica interna sul sito</span>
             </div>
           </a>
           <a href="https://www.amazon.it/s?i=electronics&tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
