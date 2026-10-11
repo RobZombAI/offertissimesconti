@@ -34,9 +34,11 @@ jobs:
       - name: 📢 Pubblicazione Automatica Migliore Offerta sul Canale Telegram
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID || '-1003838698998' }}
-          AMAZON_AFFILIATE_TAG: ${{ secrets.AMAZON_AFFILIATE_TAG || 'offertissimes-21' }}
+          TELEGRAM_CHANNEL_ID: ${{ secrets.TELEGRAM_CHANNEL_ID }}
+          AMAZON_AFFILIATE_TAG: ${{ secrets.AMAZON_AFFILIATE_TAG }}
         run: |
+          export TELEGRAM_CHANNEL_ID="${TELEGRAM_CHANNEL_ID:-"-1003838698998"}"
+          export AMAZON_AFFILIATE_TAG="${AMAZON_AFFILIATE_TAG:-"offertissimes-21"}"
           if [ -n "$TELEGRAM_BOT_TOKEN" ]; then
             echo "🚀 Invio offerta verificata sul canale Telegram..."
             python bot/telegram_channel_broadcaster.py --once
