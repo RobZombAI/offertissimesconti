@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: offertissimesconti:latest
+    container_name: offertissimesconti-production
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      - PORT=8000
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHANNEL_ID=${TELEGRAM_CHANNEL_ID}
+      - AMAZON_AFFILIATE_TAG=${AMAZON_AFFILIATE_TAG:-offertissimes-21}
+      - BROADCAST_INTERVAL=${BROADCAST_INTERVAL:-600}
+    env_file:
+      - .env
+    volumes:
+      # Persistenza del database SQLite tra riavvii e aggiornamenti
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/stats"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

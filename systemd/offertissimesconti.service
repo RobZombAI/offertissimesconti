@@ -1,0 +1,17 @@
+[Unit]
+Description=OFFERTISSIMESCONTI - Production All-In-One Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/offertissimesconti
+EnvironmentFile=/var/www/offertissimesconti/.env
+ExecStart=/var/www/offertissimesconti/docker-entrypoint.sh all
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
