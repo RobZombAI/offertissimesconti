@@ -278,5 +278,17 @@ class LiveDealMonitor:
             time.sleep(interval_seconds)
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Live Deal Monitor")
+    parser.add_argument("--once", action="store_true", help="Esegue un solo ciclo di monitoraggio e termina")
+    parser.add_argument("--interval", type=int, default=30, help="Intervallo in secondi per il ciclo continuo")
+    args = parser.parse_args()
+
     monitor = LiveDealMonitor()
-    monitor.run_periodic_monitoring(interval_seconds=30)
+    if args.once:
+        print("📡 Esecuzione scansione one-shot del Live Deal Monitor...")
+        synced = monitor.sync_live_prices_for_monitored_products()
+        notified = monitor.check_user_alerts()
+        print(f"✅ Scansione completata: {synced} prezzi aggiornati, {notified} alert inviati.")
+    else:
+        monitor.run_periodic_monitoring(interval_seconds=args.interval)

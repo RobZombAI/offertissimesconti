@@ -1,0 +1,25 @@
+# ==============================================================================
+# OFFERTISSIMESCONTI - Render.com Blueprint (100% FREE TIER)
+# Avvia in cloud gratuitamente l'API Server, il Deal Monitor e i Bot Telegram
+# ==============================================================================
+
+services:
+  - type: web
+    name: offertissimesconti-production
+    env: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/stats
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHANNEL_ID
+        value: "-1003838698998"
+      - key: AMAZON_AFFILIATE_TAG
+        value: "offertissimes-21"
+      - key: BROADCAST_INTERVAL
+        value: "600"
