@@ -352,13 +352,25 @@ class AmazonLivePriceFetcher:
                     with sqlite3.connect(db_path) as conn:
                         conn.row_factory = sqlite3.Row
                         cur = conn.cursor()
-                        term = f"%{cleaned_query}%"
-                        cur.execute("""
-                            SELECT * FROM products_catalog
-                            WHERE title LIKE ? OR brand LIKE ? OR sub_category_name LIKE ? OR macro_category_name LIKE ? OR asin LIKE ?
-                            ORDER BY bsr_rank ASC, est_monthly_sales DESC
-                            LIMIT ?
-                        """, (term, term, term, term, term, limit))
+                        is_deals_intent = any(k in cleaned_query.lower() for k in [
+                            "offerte del giorno", "offerta del giorno", "goldbox", "offerte", "offerta", 
+                            "sconti", "sconto", "deal", "deals", "promozioni", "promozione", "ribassi"
+                        ])
+                        if is_deals_intent:
+                            cur.execute("""
+                                SELECT * FROM products_catalog
+                                WHERE list_price > current_price AND keepa_drop_percent > 0
+                                ORDER BY keepa_drop_percent DESC, est_monthly_sales DESC
+                                LIMIT ?
+                            """, (limit,))
+                        else:
+                            term = f"%{cleaned_query}%"
+                            cur.execute("""
+                                SELECT * FROM products_catalog
+                                WHERE title LIKE ? OR brand LIKE ? OR sub_category_name LIKE ? OR macro_category_name LIKE ? OR asin LIKE ?
+                                ORDER BY bsr_rank ASC, est_monthly_sales DESC
+                                LIMIT ?
+                            """, (term, term, term, term, term, limit))
                         for r in cur.fetchall():
                             d = dict(r)
                             d["is_live_amazon"] = True

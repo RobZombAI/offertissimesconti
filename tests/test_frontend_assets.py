@@ -150,5 +150,29 @@ class TestFrontendAssets(unittest.TestCase):
         self.assertIn("performBrowserSearch", js)
         self.assertIn("btnFloatingBrowser", js)
 
+    def test_daily_deals_ui_elements(self):
+        index_path = os.path.join(WEB_DIR, "index.html")
+        with open(index_path, "r", encoding="utf-8") as f:
+            html = f.read()
+        self.assertIn('id="btnHeroDailyDeals"', html)
+        self.assertIn('id="nav-daily-deals"', html)
+        self.assertIn('id="tabDailyDeals"', html)
+        self.assertIn('id="modalDeptDailyDeals"', html)
+
+        css_path = os.path.join(WEB_DIR, "style.css")
+        with open(css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+        self.assertIn(".pill-highlight-deals", css)
+        self.assertIn(".badge-deal-hot", css)
+        self.assertIn(".badge-deal-day", css)
+
+        js_path = os.path.join(WEB_DIR, "app.js")
+        with open(js_path, "r", encoding="utf-8") as f:
+            js = f.read()
+        self.assertIn("btnHeroDailyDeals", js)
+        self.assertIn("nav-daily-deals", js)
+        self.assertIn("modalDeptDailyDeals", js)
+        self.assertIn("daily_deals", js)
+
 if __name__ == "__main__":
     unittest.main()
