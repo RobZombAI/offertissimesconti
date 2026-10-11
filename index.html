@@ -34,7 +34,7 @@
       </a>
 
       <nav class="nav-menu" aria-label="Navigazione Principale">
-        <a href="#offerte" class="nav-link active">Offerte del Giorno</a>
+        <a href="#offerte" class="nav-link active" id="nav-daily-deals">Offerte del Giorno 🔥</a>
         <a href="#offerte" class="nav-link" id="nav-bestsellers">Più Venduti 🏆</a>
         <a href="#offerte" class="nav-link" id="nav-drops">Cali di Prezzo 📉</a>
         <a href="#ciclici" class="nav-link" id="nav-cyclical">Spesa Ciclica 🔄</a>
@@ -87,7 +87,7 @@
         <span class="shortcut-label">🌐 Scorciatoie Amazon.it:</span>
         <button id="btnHeroOpenBrowser" class="quick-link-pill pill-highlight-browser" title="Apri il Navigatore Amazon In-Site con sessione protetta 24h">🧭 Finestra Navigatore Amazon</button>
         <button id="btnHeroBestsellers" class="quick-link-pill pill-highlight-bestseller" title="Visualizza la classifica dei più venduti direttamente qui sul sito">🏆 Classifica Più Venduti</button>
-        <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🔥 Offerte del Giorno</a>
+        <button id="btnHeroDailyDeals" class="quick-link-pill pill-highlight-deals" title="Visualizza tutte le Offerte del Giorno reali direttamente sul sito">🔥 Offerte del Giorno</button>
         <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">📦 Seconda Mano (-20%)</a>
         <a href="https://www.amazon.it/?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="quick-link-pill">🛒 Tutto Amazon.it</a>
         <button id="btnOpenConverterHero" class="quick-link-pill pill-highlight">✨ Cerca Link / ASIN</button>
@@ -133,7 +133,8 @@
       <!-- Filters & Tabs -->
       <div class="filters-toolbar">
         <div class="filter-tabs">
-          <button class="tab-btn active" data-filter="all">Tutte le Offerte</button>
+          <button class="tab-btn active" data-filter="daily_deals" id="tabDailyDeals" title="Tutte le Offerte del Giorno e promozioni a tempo limitato di Amazon">🔥 Offerte del Giorno</button>
+          <button class="tab-btn" data-filter="all">Tutti i Prodotti</button>
           <button class="tab-btn" data-filter="bestsellers" id="tabBestsellers" title="Classifica ufficiale dei prodotti più venduti su Amazon.it">🏆 Classifica Più Venduti</button>
           <button class="tab-btn" data-filter="drops">📉 Cali di Prezzo Reali</button>
           <button class="tab-btn" data-filter="cyclical">🔄 Spesa Ciclica</button>
@@ -491,11 +492,11 @@
               <span>Tutto il catalogo e le offerte</span>
             </div>
           </a>
-          <a href="https://www.amazon.it/gp/goldbox?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">
+          <a href="#offerte" class="dept-card" id="modalDeptDailyDeals">
             <span class="dept-icon">🔥</span>
             <div>
               <strong>Offerte del Giorno & Lampo</strong>
-              <span>Sconti a tempo limitato di oggi</span>
+              <span>Visualizza tutte le offerte scontate nel sito</span>
             </div>
           </a>
           <a href="https://www.amazon.it/warehouse-deals?tag=offertissimes-21" target="_blank" rel="noopener sponsored" class="dept-card">

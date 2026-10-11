@@ -9,7 +9,7 @@ const API_BASE = (window.location.origin.includes('localhost') || window.locatio
 let rawCatalog = [];
 let allCategories = [];
 let currentProducts = [];
-let activeFilter = 'all'; // 'all', 'drops', 'cyclical', 'viral'
+let activeFilter = 'daily_deals'; // 'daily_deals', 'all', 'bestsellers', 'drops', 'cyclical', 'viral'
 let activeCategory = '';
 let minDiscount = 0;
 let searchQuery = '';
@@ -154,6 +154,21 @@ function setupEventListeners() {
   document.getElementById('openAmazonGatewayBtn')?.addEventListener('click', () => {
     openBrowserHub();
     showToast('Navigatore Amazon aperto!', '🧭');
+  });
+  document.getElementById('nav-daily-deals')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    setActiveTab('daily_deals');
+    showToast('Offerte del Giorno caricate!', '🔥');
+  });
+  document.getElementById('btnHeroDailyDeals')?.addEventListener('click', () => {
+    setActiveTab('daily_deals');
+    showToast('Offerte del Giorno caricate!', '🔥');
+  });
+  document.getElementById('modalDeptDailyDeals')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.getElementById('amazonGatewayDialog')?.close();
+    setActiveTab('daily_deals');
+    showToast('Offerte del Giorno caricate!', '🔥');
   });
   document.getElementById('nav-bestsellers')?.addEventListener('click', (e) => {
     e.preventDefault();
@@ -569,10 +584,26 @@ function setActiveTab(filter) {
     if (tab.dataset.filter === filter) tab.classList.add('active');
     else tab.classList.remove('active');
   });
+
+  // Sincronizza nav link principale
+  document.querySelectorAll('.nav-menu .nav-link').forEach(link => link.classList.remove('active'));
+  if (filter === 'daily_deals') {
+    document.getElementById('nav-daily-deals')?.classList.add('active');
+  } else if (filter === 'bestsellers') {
+    document.getElementById('nav-bestsellers')?.classList.add('active');
+  } else if (filter === 'drops') {
+    document.getElementById('nav-drops')?.classList.add('active');
+  } else if (filter === 'cyclical') {
+    document.getElementById('nav-cyclical')?.classList.add('active');
+  }
+
   activeFilter = filter;
   if (filter === 'bestsellers') {
     activeSort = 'bestseller';
     if (sortSelect) sortSelect.value = 'bestseller';
+  } else if (filter === 'daily_deals') {
+    activeSort = 'drop';
+    if (sortSelect) sortSelect.value = 'drop';
   } else if (activeSort === 'bestseller') {
     activeSort = 'drop';
     if (sortSelect) sortSelect.value = 'drop';
@@ -702,7 +733,12 @@ async function loadProducts(reset = true) {
   const mainTitleEl = document.getElementById('sectionMainTitle');
   const mainDescEl = document.getElementById('sectionMainDesc');
   if (mainTitleEl && mainDescEl) {
-    if (activeFilter === 'bestsellers') {
+    if (activeFilter === 'daily_deals') {
+      const catObj = allCategories.find(c => c.macro_category_id === activeCategory);
+      const catName = catObj ? catObj.macro_category_name : 'Tutte le Categorie';
+      mainTitleEl.innerHTML = `🔥 Offerte del Giorno & Promozioni Lampo — ${catName}`;
+      mainDescEl.textContent = 'Tutti i prodotti con sconti reali attivi su Amazon.it, ordinati per percentuale di ribasso effettivo rispetto al listino.';
+    } else if (activeFilter === 'bestsellers') {
       const catObj = allCategories.find(c => c.macro_category_id === activeCategory);
       const catName = catObj ? catObj.macro_category_name : 'Tutte le Categorie';
       mainTitleEl.innerHTML = `🏆 Classifica Più Venduti — ${catName}`;
@@ -740,7 +776,10 @@ async function loadProducts(reset = true) {
         return false;
       }
     }
-    if (activeFilter === 'drops') {
+    if (activeFilter === 'daily_deals') {
+      // Offerte del giorno: prodotti con reale sconto rispetto al prezzo di listino e ribasso percentuale > 0
+      if (!(p.list_price > p.current_price && (p.keepa_drop_percent || 0) > 0)) return false;
+    } else if (activeFilter === 'drops') {
       // Filtra esclusivamente i reali cali di prezzo verificati rispetto al listino o storico
       if (!(p.list_price > p.current_price || (p.keepa_drop_percent || 0) > 0)) return false;
     } else if (activeFilter === 'cyclical') {
@@ -857,6 +896,8 @@ async function loadProducts(reset = true) {
 
   if (isLiveResults) {
     resultsCount.textContent = `Mostrati ${currentProducts.length} risultati ufficiali da Amazon.it per "${searchQuery || 'offerte'}"`;
+  } else if (activeFilter === 'daily_deals') {
+    resultsCount.textContent = `Visualizzate ${currentProducts.length} Offerte del Giorno (su ${filtered.length} prodotti in forte sconto)`;
   } else if (activeFilter === 'bestsellers') {
     resultsCount.textContent = `Visualizzati ${currentProducts.length} prodotti in classifica (su ${filtered.length} più venduti)`;
   } else {
@@ -974,10 +1015,16 @@ function renderProducts(products, reset, startIndex = 0) {
     products.forEach((p, idx) => {
       const position = (startIndex || 0) + idx + 1;
       const isBestsellerMode = activeFilter === 'bestsellers' || activeSort === 'bestseller';
+      const isDailyDealsMode = activeFilter === 'daily_deals';
+      const isHotDeal = p.keepa_drop_percent >= 35;
       const tr = document.createElement('tr');
       const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
       const dropBadge = hasRealDiscount 
-        ? `<span class="badge-discount" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">📉 -${p.keepa_drop_percent}% Reale</span>` 
+        ? ((isDailyDealsMode && isHotDeal)
+            ? `<span class="badge-deal-hot" style="display:inline-flex; font-size:0.72rem; padding:2px 6px;">🔥 Super Offerta -${p.keepa_drop_percent}%</span>`
+            : (isDailyDealsMode 
+                ? `<span class="badge-deal-day" style="display:inline-flex; font-size:0.72rem; padding:2px 6px;">⚡ Offerta -${p.keepa_drop_percent}%</span>`
+                : `<span class="badge-discount" style="display:inline-block; font-size:0.72rem; padding:2px 6px;">📉 -${p.keepa_drop_percent}% Reale</span>`))
         : '';
       const liveBadge = p.is_live_amazon 
         ? `<span class="badge-live-amazon" style="display:inline-block; font-size:0.72rem; padding:2px 6px; background:#fef3c7; color:#b45309; border-radius:4px; font-weight:700; border:1px solid #fde68a;">🌐 Live Amazon</span>` 
@@ -1084,9 +1131,15 @@ function renderProducts(products, reset, startIndex = 0) {
     const imgUrl = p.image_url || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400';
 
     const hasRealDiscount = p.list_price > p.current_price && p.keepa_drop_percent > 0;
-    const discountBadge = hasRealDiscount 
-      ? `<span class="badge-discount">-${p.keepa_drop_percent}% Calo Reale</span>`
-      : `<span style="background:#f1f5f9; color:#475569; font-weight:700; font-size:0.72rem; padding:2px 7px; border-radius:6px; border:1px solid #e2e8f0;">Prezzo Amazon</span>`;
+    const isDailyDealsMode = activeFilter === 'daily_deals';
+    const isHotDeal = p.keepa_drop_percent >= 35;
+    const dealBadge = (hasRealDiscount && isDailyDealsMode)
+      ? (isHotDeal 
+          ? `<span class="badge-deal-hot">🔥 Super Offerta -${p.keepa_drop_percent}%</span>`
+          : `<span class="badge-deal-day">⚡ Offerta del Giorno -${p.keepa_drop_percent}%</span>`)
+      : (hasRealDiscount 
+          ? `<span class="badge-discount">-${p.keepa_drop_percent}% Calo Reale</span>`
+          : `<span style="background:#f1f5f9; color:#475569; font-weight:700; font-size:0.72rem; padding:2px 7px; border-radius:6px; border:1px solid #e2e8f0;">Prezzo Amazon</span>`);
 
     const pricesSectionHtml = hasRealDiscount
       ? `
@@ -1101,9 +1154,9 @@ function renderProducts(products, reset, startIndex = 0) {
 
     card.innerHTML = `
       <div class="card-top">
-        ${isBestsellerMode ? rankBadge : discountBadge}
+        ${isBestsellerMode ? rankBadge : dealBadge}
         <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-          ${isBestsellerMode && hasRealDiscount ? discountBadge : (!isBestsellerMode && rankBadge ? rankBadge : '')}
+          ${isBestsellerMode && hasRealDiscount ? dealBadge : (!isBestsellerMode && rankBadge ? rankBadge : '')}
           ${liveBadge}
           ${cyclicalBadge}
         </div>
